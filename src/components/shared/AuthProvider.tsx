@@ -114,7 +114,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   // Access check for role protection
   const isStaff = role === 'staff';
-  const isRestrictedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/finance') || pathname === '/';
+  const isRestrictedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/finance') || pathname.startsWith('/owner') || pathname === '/';
 
   if (user && isStaff && isRestrictedPath) {
     return (

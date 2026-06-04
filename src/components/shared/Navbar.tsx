@@ -6,14 +6,15 @@ import {
   Search, 
   Clock, 
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Menu
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import ThemeToggle from '@/components/shared/ThemeToggle';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/shared/AuthProvider';
 
-export default function Navbar() {
+export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { role } = useAuth();
@@ -74,12 +75,32 @@ export default function Navbar() {
   };
 
   return (
-    <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200">
+    <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">
       {/* Page Breadcrumbs */}
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Mitra Computer</span>
-        <ChevronRight size={12} className="text-zinc-300 dark:text-zinc-700" />
-        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{getPageTitle()}</span>
+        {role === 'owner' && (
+          <button
+            onClick={onMenuClick}
+            className="p-2 md:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
+            title="Menu Utama"
+          >
+            <Menu size={18} />
+          </button>
+        )}
+        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 hidden md:inline">Mitra Computer</span>
+        <ChevronRight size={12} className="text-zinc-300 dark:text-zinc-700 hidden md:inline" />
+        <span className="text-sm md:text-base font-semibold text-zinc-800 dark:text-zinc-100 max-w-[180px] md:max-w-none truncate" title={getPageTitle()}>
+          <span className="inline md:hidden">
+            {getPageTitle() === 'Dashboard Overview' ? 'Dashboard' :
+             getPageTitle() === 'POS Kasir Toko' ? 'POS Kasir' :
+             getPageTitle() === 'Manajemen Inventory' ? 'Inventory' :
+             getPageTitle() === 'Pelacakan Reparasi' ? 'Service' :
+             getPageTitle() === 'Arus Kas & Buku Keuangan' ? 'Arus Kas' : getPageTitle()}
+          </span>
+          <span className="hidden md:inline">
+            {getPageTitle()}
+          </span>
+        </span>
       </div>
 
       {/* Action Controls */}

@@ -10,7 +10,8 @@ import {
   TrendingUp, 
   Settings, 
   LogOut,
-  Laptop
+  Laptop,
+  Users
 } from 'lucide-react';
 import { useAuth } from '@/components/shared/AuthProvider';
 
@@ -28,17 +29,18 @@ export default function Sidebar({ className = '' }: SidebarProps) {
     { name: 'Inventory Stok', href: '/inventory', icon: Package },
     { name: 'Pelacakan Service', href: '/service', icon: Wrench },
     { name: 'Arus Kas / Finansial', href: '/finance', icon: TrendingUp },
+    { name: 'Kelola Staf', href: '/owner/staff', icon: Users },
   ];
 
   const filteredMenuItems = menuItems.filter((item) => {
-    if (role === 'staff' && (item.href === '/dashboard' || item.href === '/finance')) {
+    if (role === 'staff' && (item.href === '/dashboard' || item.href === '/finance' || item.href === '/owner/staff')) {
       return false;
     }
     return true;
   });
 
   return (
-    <aside className={`w-64 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex flex-col h-screen sticky top-0 transition-colors duration-200 ${className}`}>
+    <aside className={`w-64 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex flex-col h-screen sticky top-0 transition-colors duration-200 print:hidden ${className}`}>
       {/* Header / Logo */}
       <div className="h-16 flex items-center px-6 gap-3 border-b border-zinc-200 dark:border-zinc-800">
         <div className="bg-emerald-600 p-2 rounded-lg text-white">

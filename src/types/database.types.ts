@@ -70,6 +70,7 @@ export interface Database {
           staff_id: string
           total_amount: number
           payment_method: Database['public']['Enums']['payment_method']
+          customer_name: string | null
           created_at: string
         }
         Insert: {
@@ -78,6 +79,7 @@ export interface Database {
           staff_id: string
           total_amount: number
           payment_method: Database['public']['Enums']['payment_method']
+          customer_name?: string | null
           created_at?: string
         }
         Update: {
@@ -86,6 +88,7 @@ export interface Database {
           staff_id?: string
           total_amount?: number
           payment_method?: Database['public']['Enums']['payment_method']
+          customer_name?: string | null
           created_at?: string
         }
         Relationships: []
@@ -182,6 +185,33 @@ export interface Database {
           description?: string
           amount?: number
           date?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          id: string
+          user_id: string | null
+          email: string | null
+          action: string
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          email?: string | null
+          action: string
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          email?: string | null
+          action?: string
+          details?: Json
           created_at?: string
         }
         Relationships: []

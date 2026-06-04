@@ -203,9 +203,9 @@ export default function ServicePage() {
   };
 
   return (
-    <div className="flex flex-col xl:flex-row gap-8 h-[calc(100vh-8.5rem)]">
+    <div className="flex flex-col xl:flex-row gap-8 h-auto xl:h-[calc(100vh-8.5rem)]">
       {/* Service Queue List Panel */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800/80 p-6 overflow-hidden shadow-sm">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800/80 p-4 md:p-6 overflow-hidden shadow-sm">
         {/* Controls */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-3 flex-1 max-w-xl">
@@ -251,7 +251,7 @@ export default function ServicePage() {
         )}
 
         {/* Service Cards Queue */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+        <div className="h-[50vh] md:h-auto flex-1 overflow-y-auto pr-1 space-y-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
               <Loader2 className="animate-spin text-emerald-500" size={32} />
@@ -268,7 +268,7 @@ export default function ServicePage() {
               <div 
                 key={svc.id}
                 onClick={() => setSelectedService(svc)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                className={`p-3 md:p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 ${
                   selectedService?.id === svc.id 
                     ? 'border-emerald-500 bg-emerald-50/[0.02] dark:bg-emerald-950/10'
                     : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/20'
@@ -313,22 +313,35 @@ export default function ServicePage() {
       </div>
 
       {/* Service Details & Control Console (Right column) */}
-      <div className="w-full xl:w-96 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800/80 p-6 overflow-hidden shadow-sm">
+      <div className={`w-full xl:w-96 flex flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800/80 p-4 md:p-6 overflow-hidden shadow-sm ${
+        selectedService ? 'flex' : 'hidden xl:flex'
+      }`}>
         {selectedService ? (
           <form onSubmit={handleUpdateService} className="flex flex-col h-full justify-between">
             <div className="space-y-6">
               <div className="border-b border-slate-100 dark:border-zinc-800 pb-4 flex items-center justify-between gap-4">
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Detail Pelacakan Service</span>
-                  <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base mt-1">
-                    {selectedService.device_name}
-                  </h3>
-                  <span className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 block">
-                    Pelanggan: <span className="font-semibold text-slate-800 dark:text-zinc-200">{selectedService.customer_name}</span>
-                  </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider inline-block mt-2 ${getStatusColor(selectedService.status)}`}>
-                    {selectedService.status.replace('_', ' ')}
-                  </span>
+                <div className="flex items-center gap-2">
+                  {/* Back button for mobile/tablet */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedService(null)}
+                    className="p-2 xl:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg cursor-pointer"
+                    title="Tutup Detail"
+                  >
+                    <ChevronRight className="rotate-180" size={16} />
+                  </button>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Detail Pelacakan Service</span>
+                    <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm sm:text-base mt-1">
+                      {selectedService.device_name}
+                    </h3>
+                    <span className="text-[11px] text-slate-500 dark:text-zinc-400 mt-1 block">
+                      Pelanggan: <span className="font-semibold text-slate-800 dark:text-zinc-200">{selectedService.customer_name}</span>
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider inline-block mt-2 ${getStatusColor(selectedService.status)}`}>
+                      {selectedService.status.replace('_', ' ')}
+                    </span>
+                  </div>
                 </div>
                 <button 
                   type="button"

@@ -203,40 +203,40 @@ export default function InventoryPage() {
   const totalValueStok = products.reduce((sum, p) => sum + p.cost_price * p.stock, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Upper Info Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-            <Package size={22} />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-6">
+        <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-2 md:gap-4">
+          <div className="p-1.5 md:p-3 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+            <Package size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Jenis Barang</p>
-            <h4 className="text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Jenis</p>
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
               {loading ? '...' : `${products.length} Item`}
             </h4>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-500 rounded-xl">
-            <AlertTriangle size={22} />
+        <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-2 md:gap-4">
+          <div className="p-1.5 md:p-3 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-500 rounded-xl shrink-0">
+            <AlertTriangle size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Stok Menipis</p>
-            <h4 className="text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Stok Tipis</p>
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
               {loading ? '...' : `${lowStockCount} Barang`}
             </h4>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
-            <SlidersHorizontal size={22} />
+        <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-2 md:gap-4 col-span-2 md:col-span-1">
+          <div className="p-1.5 md:p-3 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
+            <SlidersHorizontal size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
           <div>
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Value Stok</p>
-            <h4 className="text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Value Stok</p>
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
               {loading ? '...' : formatRupiah(totalValueStok)}
             </h4>
           </div>
@@ -318,11 +318,11 @@ export default function InventoryPage() {
               <thead>
                 <tr className="border-b border-slate-100 dark:border-zinc-800 text-slate-400 font-bold uppercase tracking-wider bg-slate-50/50 dark:bg-zinc-900/10">
                   <th className="py-3.5 px-4 rounded-l-xl">Nama Barang</th>
-                  <th className="py-3.5 px-4">Kategori</th>
-                  <th className="py-3.5 px-4 text-right">Harga Modal</th>
+                  <th className="py-3.5 px-4 hidden sm:table-cell">Kategori</th>
+                  <th className="py-3.5 px-4 text-right hidden md:table-cell">Harga Modal</th>
                   <th className="py-3.5 px-4 text-right">Harga Jual</th>
                   <th className="py-3.5 px-4 text-center">Stok</th>
-                  <th className="py-3.5 px-4 text-center">Batas Min</th>
+                  <th className="py-3.5 px-4 text-center hidden sm:table-cell">Batas Min</th>
                   <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>
                 </tr>
               </thead>
@@ -347,12 +347,12 @@ export default function InventoryPage() {
                           )}
                         </div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="py-4 px-4 hidden sm:table-cell">
                         <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400">
                           {product.category}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-right font-medium text-slate-500 dark:text-slate-400">
+                      <td className="py-4 px-4 text-right font-medium text-slate-500 dark:text-slate-400 hidden md:table-cell">
                         {formatRupiah(product.cost_price)}
                       </td>
                       <td className="py-4 px-4 text-right font-semibold text-slate-800 dark:text-slate-100">
@@ -367,19 +367,19 @@ export default function InventoryPage() {
                           {product.stock}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-center font-medium text-slate-400">{product.min_stock_threshold}</td>
+                      <td className="py-4 px-4 text-center font-medium text-slate-400 hidden sm:table-cell">{product.min_stock_threshold}</td>
                       <td className="py-4 px-4 text-center">
                         <div className="flex justify-center items-center gap-2">
                           <button 
                             onClick={() => setEditingProduct(product)}
-                            className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all" 
+                            className="p-2.5 text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
                             title="Edit Barang"
                           >
                             <Edit size={14} />
                           </button>
                           <button 
                             onClick={() => handleDeleteProduct(product.id, product.name)}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all" 
+                            className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
                             title="Hapus Barang"
                           >
                             <Trash2 size={14} />
