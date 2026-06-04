@@ -30,3 +30,9 @@ body {
   background-color: var(--background);
   color: var(--foreground);
 }
+
+/* Hide native browser password reveal and clear buttons */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
