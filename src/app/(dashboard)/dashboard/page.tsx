@@ -83,7 +83,7 @@ export default function DashboardPage() {
       setActiveServicesCount(activeSvcs.length);
       setRecentServices(allSvcs.slice(0, 5));
 
-      // 3. Fetch Transactions Today
+      // 3. Fetch Transactions Today (POS)
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const isoToday = startOfToday.toISOString();
@@ -94,8 +94,22 @@ export default function DashboardPage() {
         .gte('created_at', isoToday);
       if (txErr) throw txErr;
 
-      const revenue = (txs || []).reduce((sum, t) => sum + t.total_amount, 0);
-      setTodayRevenue(revenue);
+      const posRevenue = (txs || []).reduce((sum, t) => sum + t.total_amount, 0);
+
+      // 3b. Fetch Services Selesai Hari Ini
+      const { data: svcToday, error: svcTodayErr } = await supabase
+        .from('services')
+        .select('service_cost, part_cost')
+        .eq('status', 'selesai')
+        .gte('updated_at', isoToday);
+      if (svcTodayErr) throw svcTodayErr;
+
+      const serviceRevenue = (svcToday || []).reduce(
+        (sum, s) => sum + (s.service_cost || 0) + (s.part_cost || 0),
+        0
+      );
+
+      setTodayRevenue(posRevenue + serviceRevenue);
 
       // 4. Fetch Monthly Expenses
       const startOfMonth = new Date();
@@ -133,7 +147,7 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { name: 'Omset Hari Ini', value: formatRupiah(todayRevenue), description: 'Penjualan terverifikasi hari ini', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-500/10' },
+    { name: 'Omset Hari Ini', value: formatRupiah(todayRevenue), description: 'Gabungan Penjualan & Service Selesai Hari Ini', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-500/10' },
     { name: 'Antrean Service', value: `${activeServicesCount} Device`, description: 'Antrean & sedang dicek', icon: Wrench, color: 'text-blue-600 bg-blue-500/10' },
     { name: 'Peringatan Stok', value: `${lowStockCount} Barang`, description: 'Segera restok dari Jambi', icon: AlertCircle, color: 'text-amber-600 bg-amber-500/10' },
     { name: 'Pengeluaran Bulan Ini', value: formatRupiah(monthlyExpenses), description: 'Operasional ruko & operasional toko', icon: TrendingDown, color: 'text-rose-600 bg-rose-500/10' },

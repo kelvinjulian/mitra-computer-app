@@ -30,7 +30,9 @@ export default function KasirPage() {
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer'>('cash');
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [invoiceNum, setInvoiceNum] = useState('');
+  const [lastTotal, setLastTotal] = useState(0);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [showCustomModal, setShowCustomModal] = useState(false);
 
   const formatRupiah = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
@@ -64,6 +66,33 @@ export default function KasirPage() {
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleCustomItemSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('customName') as string;
+    const sellingPrice = parseInt(formData.get('customSellingPrice') as string, 10);
+    const costPriceStr = formData.get('customCostPrice') as string;
+    const costPrice = costPriceStr ? parseInt(costPriceStr, 10) : 0;
+    const quantity = parseInt(formData.get('customQuantity') as string, 10);
+
+    const tempId = 'custom-' + Date.now();
+
+    addItem({
+      productId: tempId,
+      name,
+      sellingPrice,
+      stock: 999999,
+      isCustom: true,
+      costPrice
+    });
+
+    if (quantity > 1) {
+      updateQuantity(tempId, quantity);
+    }
+
+    setShowCustomModal(false);
+  };
 
   const handleCheckout = async () => {
     if (items.length === 0 || checkingOut) return;
@@ -107,11 +136,15 @@ export default function KasirPage() {
       const transactionId = transaction.id;
 
       // 3. Masukkan Detail Item Transaksi (transaction_items)
+      // Custom items: product_id = null, nama & modal disimpan di kolom custom_item_name & cost_price_at_sale
+      // Regular items: product_id = id produk dari inventory
       const transactionItems = items.map((item) => ({
         transaction_id: transactionId,
-        product_id: item.productId,
+        product_id: item.isCustom ? null : item.productId,
         quantity: item.quantity,
-        price_at_sale: item.sellingPrice
+        price_at_sale: item.sellingPrice,
+        custom_item_name: item.isCustom ? `${item.name} [Custom Item]` : null,
+        cost_price_at_sale: item.isCustom ? (item.costPrice ?? 0) : null,
       }));
 
       const { error: itemsErr } = await supabase
@@ -120,8 +153,11 @@ export default function KasirPage() {
 
       if (itemsErr) throw itemsErr;
 
-      // 4. Update Stok di database (Read-then-Update per item)
+
+      // 4. Update Stok di database (Read-then-Update per item; custom items dilewati)
       for (const item of items) {
+        if (item.isCustom) continue;
+
         const { data: currentProduct, error: prodErr } = await supabase
           .from('products')
           .select('stock')
@@ -140,6 +176,7 @@ export default function KasirPage() {
       }
 
       // Sukses
+      setLastTotal(getTotalAmount());
       setInvoiceNum(invNum);
       setCheckoutSuccess(true);
       clearCart();
@@ -160,8 +197,8 @@ export default function KasirPage() {
     <div className="flex flex-col xl:flex-row gap-8 h-[calc(100vh-8.5rem)]">
       {/* Products Selection Panel (Left column - main) */}
       <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 overflow-hidden">
-        {/* Search & Categories */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        {/* Search, Categories & Custom Item Button */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
@@ -172,20 +209,29 @@ export default function KasirPage() {
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-600 transition-colors"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {['all', 'komputer', 'laptop', 'printer', 'aksesoris', 'part'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
-                  selectedCategory === cat 
-                    ? 'bg-slate-900 text-white dark:bg-zinc-50 dark:text-zinc-900 shadow-sm' 
-                    : 'bg-slate-100 text-slate-500 dark:bg-zinc-950 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="flex items-center gap-3 overflow-x-auto pb-1">
+            <div className="flex gap-2">
+              {['all', 'komputer', 'laptop', 'printer', 'aksesoris', 'part'].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-200 ${
+                    selectedCategory === cat 
+                      ? 'bg-slate-900 text-white dark:bg-zinc-50 dark:text-zinc-900 shadow-sm' 
+                      : 'bg-slate-100 text-slate-500 dark:bg-zinc-950 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowCustomModal(true)}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider border border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all flex items-center gap-1 shrink-0"
+            >
+              <Plus size={12} />
+              Custom Item
+            </button>
           </div>
         </div>
 
@@ -390,7 +436,7 @@ export default function KasirPage() {
               </div>
               <div className="flex justify-between text-[11px] text-slate-400 mt-1">
                 <span>Total:</span>
-                <span className="font-bold text-emerald-600">{formatRupiah(getTotalAmount())}</span>
+                <span className="font-bold text-emerald-600">{formatRupiah(lastTotal)}</span>
               </div>
               <div className="flex justify-between text-[11px] text-slate-400 mt-1">
                 <span>Metode:</span>
@@ -398,6 +444,85 @@ export default function KasirPage() {
               </div>
             </div>
             <span className="text-[10px] text-slate-400 italic">Mencetak struk kasir thermal...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Item Modal */}
+      {showCustomModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Tambah Barang Non-Inventory (Custom)</h3>
+              <button 
+                onClick={() => setShowCustomModal(false)} 
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCustomItemSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nama Produk / Deskripsi</label>
+                <input 
+                  type="text" 
+                  name="customName" 
+                  placeholder="Contoh: Printer Canon MP287" 
+                  required 
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500" 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Harga Jual (Rp)</label>
+                  <input 
+                    type="text" 
+                    name="customSellingPrice" 
+                    placeholder="Contoh: 1500000" 
+                    required 
+                    onChange={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Harga Modal (Rp - Opsional)</label>
+                  <input 
+                    type="text" 
+                    name="customCostPrice" 
+                    placeholder="Default 0" 
+                    onChange={(e) => { e.target.value = e.target.value.replace(/[^0-9]/g, ''); }}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kuantitas (Qty)</label>
+                <input 
+                  type="number" 
+                  name="customQuantity" 
+                  placeholder="Jumlah" 
+                  required 
+                  min="1"
+                  defaultValue="1"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100" 
+                />
+              </div>
+              <div className="flex gap-3 justify-end pt-4">
+                <button 
+                  type="button" 
+                  onClick={() => setShowCustomModal(false)} 
+                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2"
+                >
+                  Tambahkan ke Keranjang
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
