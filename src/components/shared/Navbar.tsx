@@ -11,10 +11,12 @@ import {
 import { useState, useEffect } from 'react';
 import ThemeToggle from '@/components/shared/ThemeToggle';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { role } = useAuth();
   const [time, setTime] = useState<string>('');
   const [hasLowStock, setHasLowStock] = useState(false);
   const [invoiceSearch, setInvoiceSearch] = useState('');
@@ -129,11 +131,13 @@ export default function Navbar() {
 
         {/* Staff Identity Widget */}
         <div className="flex items-center gap-2 border-l border-zinc-200 dark:border-zinc-800 pl-4">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm select-none">
-            OW
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm select-none uppercase">
+            {role === 'owner' ? 'OW' : 'ST'}
           </div>
           <div className="text-left hidden lg:block">
-            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">Owner</p>
+            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              {role === 'owner' ? 'Owner' : 'Staff Toko'}
+            </p>
             <span className="text-[9px] font-semibold text-zinc-400 uppercase">Mitra Computer</span>
           </div>
         </div>
