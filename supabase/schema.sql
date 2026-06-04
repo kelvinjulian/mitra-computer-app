@@ -36,6 +36,7 @@ CREATE TABLE transactions (
     staff_id UUID NOT NULL REFERENCES users(id),
     total_amount BIGINT NOT NULL,
     payment_method payment_method NOT NULL,
+    customer_name TEXT DEFAULT 'Umum',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -92,3 +93,22 @@ CREATE POLICY "Allow all access to authenticated users for transactions" ON tran
 CREATE POLICY "Allow all access to authenticated users for transaction_items" ON transaction_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to authenticated users for services" ON services FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all access to authenticated users for expenses" ON expenses FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- 8. audit_logs (Employee Activity Logs)
+CREATE TABLE audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    email TEXT,
+    action TEXT NOT NULL,
+    details JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated users to insert audit logs" ON audit_logs FOR INSERT TO authenticated WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow owners to read audit logs" ON public.audit_logs;
+CREATE POLICY "Allow owners to read audit logs" ON public.audit_logs FOR SELECT TO authenticated USING (
+  (auth.jwt() -> 'app_metadata' ->> 'role' = 'owner') OR 
+  (auth.jwt() -> 'user_metadata' ->> 'role' = 'owner')
+);

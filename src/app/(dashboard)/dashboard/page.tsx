@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import AuditLogsTimeline from './AuditLogsTimeline';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type Service = Database['public']['Tables']['services']['Row'];
@@ -154,7 +155,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-4 md:space-y-8 animate-fade-in">
       {/* Database Error Alert */}
       {error && (
         <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-500 text-xs flex items-center gap-2">
@@ -182,21 +183,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Grid Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <div key={idx} className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 hover:border-emerald-500/30 transition-all duration-300 shadow-sm flex flex-col justify-between group text-slate-900 dark:text-zinc-50">
-              <div className="flex items-start justify-between">
-                <span className="text-slate-400 dark:text-zinc-500 text-xs font-semibold uppercase tracking-wider">{stat.name}</span>
-                <div className={`p-2.5 rounded-xl ${stat.color} transition-transform duration-300 group-hover:scale-110`}>
-                  <Icon size={20} />
+            <div key={idx} className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 hover:border-emerald-500/30 transition-all duration-300 shadow-sm flex flex-col justify-between group text-slate-900 dark:text-zinc-50">
+              <div className="flex items-start justify-between gap-1">
+                <span className="text-slate-400 dark:text-zinc-500 text-[9px] md:text-xs font-semibold uppercase tracking-wider">{stat.name}</span>
+                <div className={`p-1.5 md:p-2.5 rounded-xl ${stat.color} transition-transform duration-300 group-hover:scale-110 shrink-0`}>
+                  <Icon size={14} className="md:w-5 md:h-5" />
                 </div>
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight">{stat.value}</h3>
-                <div className="flex items-center gap-1.5 mt-2">
-                  <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium">{stat.description}</span>
+              <div className="mt-2 md:mt-4">
+                <h3 className="text-sm md:text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight">{stat.value}</h3>
+                <div className="flex items-center gap-1.5 mt-0.5 md:mt-2">
+                  <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 font-medium line-clamp-1">{stat.description}</span>
                 </div>
               </div>
             </div>
@@ -283,6 +284,9 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Audit Log Timeline */}
+      <AuditLogsTimeline />
     </div>
   );
 }
