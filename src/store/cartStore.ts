@@ -6,6 +6,8 @@ export interface CartItem {
   sellingPrice: number;
   quantity: number;
   stock: number;
+  isCustom?: boolean;
+  costPrice?: number;
 }
 
 interface CartState {
@@ -26,7 +28,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
     if (existingItem) {
       const newQuantity = existingItem.quantity + 1;
-      if (newQuantity <= product.stock) {
+      if (product.isCustom || newQuantity <= product.stock) {
         set({
           items: items.map((item) =>
             item.productId === product.productId
@@ -36,7 +38,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         });
       }
     } else {
-      if (product.stock > 0) {
+      if (product.isCustom || product.stock > 0) {
         set({
           items: [...items, { ...product, quantity: 1 }],
         });
@@ -60,7 +62,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       return;
     }
 
-    if (quantity <= item.stock) {
+    if (item.isCustom || quantity <= item.stock) {
       set({
         items: items.map((i) =>
           i.productId === productId ? { ...i, quantity } : i

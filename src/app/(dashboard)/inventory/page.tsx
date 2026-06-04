@@ -151,6 +151,47 @@ export default function InventoryPage() {
     }
   };
 
+  // 5. Bersih-bersih Produk Hantu (produk berstok 0 hasil custom item lama)
+  const [cleaning, setCleaning] = useState(false);
+  const handleCleanGhostProducts = async () => {
+    const confirmed = window.confirm(
+      'Ini akan menghapus SEMUA produk berstok 0 yang bukan terikat stok aktif dari inventory. Pastikan Anda sudah menghapus relasi transaction_items di Supabase terlebih dahulu (atau jalankan SQL: ALTER TABLE transaction_items ALTER COLUMN product_id DROP NOT NULL).\n\nLanjutkan?'
+    );
+    if (!confirmed) return;
+    setCleaning(true);
+    try {
+      // Ambil semua produk dengan stock = 0
+      const { data: zeroProd, error: fetchErr } = await supabase
+        .from('products')
+        .select('id, name')
+        .eq('stock', 0);
+      if (fetchErr) throw fetchErr;
+
+      if (!zeroProd || zeroProd.length === 0) {
+        alert('Tidak ada produk berstok 0 yang ditemukan.');
+        return;
+      }
+
+      const ids = zeroProd.map((p) => p.id);
+
+      // Hapus produk berstok 0 (transaction_items.product_id harus sudah nullable di Supabase)
+      const { error: deleteErr } = await supabase
+        .from('products')
+        .delete()
+        .in('id', ids);
+
+      if (deleteErr) throw deleteErr;
+
+      alert(`✅ Berhasil menghapus ${ids.length} produk hantu berstok 0 dari inventory!`);
+      fetchProducts();
+    } catch (err: any) {
+      console.error('Error cleaning ghost products:', err.message);
+      alert('Gagal menghapus produk hantu: ' + err.message + '\n\nPastikan kolom product_id pada tabel transaction_items sudah di-set nullable di Supabase SQL Editor.');
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   // Filter & Search Logic
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -231,13 +272,24 @@ export default function InventoryPage() {
             </select>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start md:self-auto"
-          >
-            <Plus size={14} />
-            Tambah Produk Baru
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 items-start md:items-auto self-start md:self-auto">
+            <button
+              onClick={handleCleanGhostProducts}
+              disabled={cleaning}
+              title="Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)"
+              className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+            >
+              {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+              {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+            >
+              <Plus size={14} />
+              Tambah Produk Baru
+            </button>
+          </div>
         </div>
 
         {/* Database Error Alert */}

@@ -94,23 +94,29 @@ export interface Database {
         Row: {
           id: string
           transaction_id: string
-          product_id: string
+          product_id: string | null
           quantity: number
           price_at_sale: number
+          custom_item_name: string | null
+          cost_price_at_sale: number | null
         }
         Insert: {
           id?: string
           transaction_id: string
-          product_id: string
+          product_id?: string | null
           quantity: number
           price_at_sale: number
+          custom_item_name?: string | null
+          cost_price_at_sale?: number | null
         }
         Update: {
           id?: string
           transaction_id?: string
-          product_id?: string
+          product_id?: string | null
           quantity?: number
           price_at_sale?: number
+          custom_item_name?: string | null
+          cost_price_at_sale?: number | null
         }
         Relationships: []
       }
