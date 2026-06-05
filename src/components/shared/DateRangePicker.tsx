@@ -244,21 +244,21 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
         className="flex items-center gap-2 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-lg px-4 py-2 text-sm text-slate-700 dark:text-zinc-300 transition-colors duration-150 bg-white dark:bg-zinc-900 shadow-sm"
       >
         <Calendar size={15} className="text-indigo-500 shrink-0" />
-        <span className="max-w-[220px] truncate font-medium">{triggerLabel()}</span>
+        <span className="max-w-[180px] sm:max-w-[220px] truncate font-medium">{triggerLabel()}</span>
       </button>
 
       {/* Floating Popover */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl shadow-slate-200/60 dark:shadow-zinc-900/80 overflow-hidden animate-popover-fade-in min-w-max">
-          <div className="flex">
-            {/* Left Sidebar: Presets */}
-            <div className="border-r border-slate-100 dark:border-zinc-800 p-4 flex flex-col gap-1 min-w-[140px]">
-              <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Quick select</p>
+        <div className="fixed sm:absolute inset-x-2 sm:inset-x-auto top-20 sm:top-full sm:right-0 sm:mt-2 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl shadow-slate-200/60 dark:shadow-zinc-900/80 overflow-hidden animate-popover-fade-in max-h-[85vh] overflow-y-auto sm:min-w-max">
+          <div className="flex flex-col sm:flex-row">
+            {/* Top/Left Sidebar: Presets */}
+            <div className="border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-zinc-800 p-3 sm:p-4 flex flex-row sm:flex-col gap-1 sm:gap-1 sm:min-w-[140px] overflow-x-auto sm:overflow-x-visible">
+              <p className="hidden sm:block text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Quick select</p>
               {PRESETS.map((preset) => (
                 <button
                   key={preset.label}
                   onClick={() => handlePreset(preset)}
-                  className={`text-left px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
+                  className={`whitespace-nowrap text-left px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium transition-all duration-150 ${
                     activePreset === preset.label
                       ? 'bg-indigo-600 text-white shadow-sm'
                       : 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100'
@@ -279,11 +279,11 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <div className="flex gap-8">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 w-[220px] text-center">
+                <div className="flex gap-4 sm:gap-8">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 w-[200px] sm:w-[220px] text-center">
                     {MONTH_NAMES[leftMonth]} {leftYear}
                   </span>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 w-[220px] text-center">
+                  <span className="hidden sm:inline-block text-xs font-semibold text-slate-500 dark:text-zinc-400 w-[220px] text-center">
                     {MONTH_NAMES[rightMonth]} {rightYear}
                   </span>
                 </div>
@@ -295,8 +295,8 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
                 </button>
               </div>
 
-              {/* Dual Calendars */}
-              <div className="flex gap-6 px-4 pb-4">
+              {/* Dual Calendars — single on mobile, dual on sm+ */}
+              <div className="flex gap-4 sm:gap-6 px-3 sm:px-4 pb-4">
                 <CalendarMonth
                   year={leftYear}
                   month={leftMonth}
@@ -305,20 +305,22 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
                   onDayClick={handleDayClick}
                   onDayHover={setHovered}
                 />
-                <div className="w-px bg-slate-100 dark:bg-zinc-800 self-stretch" />
-                <CalendarMonth
-                  year={rightYear}
-                  month={rightMonth}
-                  selected={pendingRange}
-                  hovered={hovered}
-                  onDayClick={handleDayClick}
-                  onDayHover={setHovered}
-                />
+                <div className="hidden sm:block w-px bg-slate-100 dark:bg-zinc-800 self-stretch" />
+                <div className="hidden sm:block">
+                  <CalendarMonth
+                    year={rightYear}
+                    month={rightMonth}
+                    selected={pendingRange}
+                    hovered={hovered}
+                    onDayClick={handleDayClick}
+                    onDayHover={setHovered}
+                  />
+                </div>
               </div>
 
               {/* Footer Row */}
               <div className="border-t border-slate-100 dark:border-zinc-800 px-4 py-3 flex items-center justify-between gap-4">
-                <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium truncate max-w-[260px]">
+                <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium truncate max-w-[160px] sm:max-w-[260px]">
                   Range: <span className="text-slate-700 dark:text-zinc-200 font-semibold">{pendingLabel()}</span>
                 </span>
                 <div className="flex items-center gap-2 shrink-0">

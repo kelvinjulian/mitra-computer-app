@@ -317,15 +317,18 @@ export default function KasirPage() {
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:border-indigo-500 dark:focus:border-indigo-600 transition-colors"
             />
           </div>
-          {role !== 'viewer' && (
-            <button
-              onClick={() => setShowCustomModal(true)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-indigo-600/10 min-h-[38px]"
-            >
-              <Plus size={14} />
-              {t("Custom Item")}
-            </button>
-          )}
+          <button
+            onClick={() => role !== 'viewer' && setShowCustomModal(true)}
+            title={role === 'viewer' ? 'Viewer tidak dapat menambahkan custom item' : undefined}
+            className={`px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-md shadow-indigo-600/10 min-h-[38px] ${
+              role === 'viewer'
+                ? 'pointer-events-none opacity-60 grayscale cursor-not-allowed'
+                : 'hover:bg-indigo-700 active:scale-98 cursor-pointer'
+            }`}
+          >
+            <Plus size={14} />
+            {t("Custom Item")}
+          </button>
         </div>
 
         {/* Category filters */}

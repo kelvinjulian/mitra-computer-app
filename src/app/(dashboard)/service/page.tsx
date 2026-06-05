@@ -243,10 +243,15 @@ export default function ServicePage() {
             </select>
           </div>
 
-          {role !== 'finance_staff' && role !== 'viewer' && (
+          {role !== 'finance_staff' && (
             <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
+              onClick={() => role !== 'viewer' && setShowAddModal(true)}
+              title={role === 'viewer' ? 'Viewer tidak dapat menambah device' : undefined}
+              className={`text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto ${
+                role === 'viewer'
+                  ? 'bg-indigo-600 pointer-events-none opacity-60 grayscale cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
+              }`}
             >
               <Plus size={14} />
               Terima Device Baru
@@ -364,12 +369,16 @@ export default function ServicePage() {
                     </span>
                   </div>
                 </div>
-                {role !== 'finance_staff' && role !== 'viewer' && (
+                {role !== 'finance_staff' && (
                   <button 
                     type="button"
-                    onClick={() => handleDeleteService(selectedService.id)}
-                    className="p-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-400 hover:scale-105 transition-transform self-start"
-                    title="Hapus Data Service"
+                    onClick={() => role !== 'viewer' && handleDeleteService(selectedService.id)}
+                    title={role === 'viewer' ? 'Viewer tidak dapat menghapus data service' : 'Hapus Data Service'}
+                    className={`p-2 rounded-lg self-start transition-all ${
+                      role === 'viewer'
+                        ? 'bg-slate-100 dark:bg-zinc-800 text-slate-300 dark:text-zinc-600 pointer-events-none opacity-50 cursor-not-allowed'
+                        : 'bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-400 hover:scale-105'
+                    }`}
                   >
                     <Trash2 size={16} />
                   </button>
@@ -461,11 +470,17 @@ export default function ServicePage() {
                   {formatRupiah(detailServiceCost + detailPartCost)}
                 </span>
               </div>
-              {role !== 'finance_staff' && role !== 'viewer' && (
+              {role !== 'finance_staff' && (
                 <button
-                  type="submit"
+                  type={role === 'viewer' ? 'button' : 'submit'}
                   disabled={updating}
-                  className="w-full bg-slate-900 dark:bg-zinc-50 text-white dark:text-slate-900 hover:opacity-90 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  onClick={(e) => { if (role === 'viewer') e.preventDefault(); }}
+                  title={role === 'viewer' ? 'Viewer tidak dapat menyimpan perubahan' : undefined}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
+                    role === 'viewer'
+                      ? 'bg-slate-300 dark:bg-zinc-700 text-slate-500 dark:text-zinc-400 pointer-events-none opacity-50 cursor-not-allowed'
+                      : 'bg-slate-900 dark:bg-zinc-50 text-white dark:text-slate-900 hover:opacity-90'
+                  }`}
                 >
                   {updating && <Loader2 size={12} className="animate-spin" />}
                   Simpan Perubahan

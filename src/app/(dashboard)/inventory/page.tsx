@@ -284,21 +284,30 @@ export default function InventoryPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 items-start md:items-auto self-start md:self-auto">
-            {role !== 'manager' && role !== 'finance_staff' && role !== 'viewer' && (
+            {role !== 'manager' && role !== 'finance_staff' && (
               <button
-                onClick={handleCleanGhostProducts}
-                disabled={cleaning}
-                title="Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)"
-                className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+                onClick={() => role !== 'viewer' && handleCleanGhostProducts()}
+                disabled={cleaning && role !== 'viewer'}
+                title={role === 'viewer' ? 'Viewer tidak dapat menghapus produk' : 'Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)'}
+                className={`text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 ${
+                  role === 'viewer'
+                    ? 'bg-rose-600 pointer-events-none opacity-60 grayscale cursor-not-allowed'
+                    : 'bg-rose-600 hover:bg-rose-500 disabled:opacity-50 cursor-pointer'
+                }`}
               >
                 {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
                 {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
               </button>
             )}
-            {role !== 'finance_staff' && role !== 'viewer' && (
+            {role !== 'finance_staff' && (
               <button
-                onClick={() => setShowAddModal(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+                onClick={() => role !== 'viewer' && setShowAddModal(true)}
+                title={role === 'viewer' ? 'Viewer tidak dapat menambah produk' : undefined}
+                className={`text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 ${
+                  role === 'viewer'
+                    ? 'bg-indigo-600 pointer-events-none opacity-60 grayscale cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'
+                }`}
               >
                 <Plus size={14} />
                 Tambah Produk Baru
@@ -337,8 +346,8 @@ export default function InventoryPage() {
                   <th className="py-3.5 px-4 text-right hidden md:table-cell">Harga Modal</th>
                   <th className="py-3.5 px-4 text-right">Harga Jual</th>
                   <th className="py-3.5 px-4 text-center">Stok</th>
-                  <th className={`py-3.5 px-4 text-center hidden sm:table-cell ${(role === 'finance_staff' || role === 'viewer') ? 'rounded-r-xl' : ''}`}>Batas Min</th>
-                  {role !== 'finance_staff' && role !== 'viewer' && <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>}
+                  <th className={`py-3.5 px-4 text-center hidden sm:table-cell ${role === 'finance_staff' ? 'rounded-r-xl' : ''}`}>Batas Min</th>
+                  {role !== 'finance_staff' && <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -383,20 +392,28 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-center font-medium text-slate-400 hidden sm:table-cell">{product.min_stock_threshold}</td>
-                      {role !== 'finance_staff' && role !== 'viewer' && (
+                      {role !== 'finance_staff' && (
                         <td className="py-4 px-4 text-center">
                           <div className="flex justify-center items-center gap-2">
                             <button 
-                              onClick={() => setEditingProduct(product)}
-                              className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
-                              title="Edit Barang"
+                              onClick={() => role !== 'viewer' && setEditingProduct(product)}
+                              title={role === 'viewer' ? 'Viewer tidak dapat mengedit' : 'Edit Barang'}
+                              className={`p-2.5 rounded-lg transition-all ${
+                                role === 'viewer'
+                                  ? 'text-slate-300 dark:text-zinc-700 pointer-events-none opacity-50 cursor-not-allowed'
+                                  : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer'
+                              }`}
                             >
                               <Edit size={14} />
                             </button>
                             <button 
-                              onClick={() => handleDeleteProduct(product.id, product.name)}
-                              className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
-                              title="Hapus Barang"
+                              onClick={() => role !== 'viewer' && handleDeleteProduct(product.id, product.name)}
+                              title={role === 'viewer' ? 'Viewer tidak dapat menghapus' : 'Hapus Barang'}
+                              className={`p-2.5 rounded-lg transition-all ${
+                                role === 'viewer'
+                                  ? 'text-slate-300 dark:text-zinc-700 pointer-events-none opacity-50 cursor-not-allowed'
+                                  : 'text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer'
+                              }`}
                             >
                               <Trash2 size={14} />
                             </button>
