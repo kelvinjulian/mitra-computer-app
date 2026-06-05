@@ -106,7 +106,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-zinc-950 text-slate-400 gap-3">
-        <Loader2 className="animate-spin text-emerald-500" size={48} />
+        <Loader2 className="animate-spin text-indigo-500" size={48} />
         <p className="text-sm font-medium">Memeriksa hak akses keamanan...</p>
       </div>
     );
@@ -131,7 +131,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           </div>
           <button
             onClick={() => router.push('/kasir')}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all duration-200 shadow-md"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-all duration-200 shadow-md"
           >
             Kembali ke POS Kasir
           </button>

@@ -298,7 +298,7 @@ export default function KasirPage() {
               placeholder="Cari nama barang..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-600 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:border-indigo-500 dark:focus:border-indigo-600 transition-colors"
             />
           </div>
           <div className="flex items-center gap-3 overflow-x-auto pb-1">
@@ -319,7 +319,7 @@ export default function KasirPage() {
             </div>
             <button
               onClick={() => setShowCustomModal(true)}
-              className="px-3.5 py-2.5 md:py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider border border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
+              className="px-3.5 py-2.5 md:py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider border border-indigo-600 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
             >
               <Plus size={12} />
               Custom Item
@@ -361,12 +361,12 @@ export default function KasirPage() {
                     className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between hover:shadow-md ${
                       remainingStock === 0
                         ? 'border-slate-105 dark:border-zinc-900 bg-slate-50/50 dark:bg-zinc-950/40 opacity-60'
-                        : 'border-slate-200 dark:border-zinc-805 hover:border-emerald-500/40 bg-white dark:bg-zinc-900/20'
+                        : 'border-slate-200 dark:border-zinc-805 hover:border-indigo-500/40 bg-white dark:bg-zinc-900/20'
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400">
                           {product.category}
                         </span>
                         <span className={`text-[10px] font-semibold ${remainingStock <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
@@ -392,7 +392,7 @@ export default function KasirPage() {
                         className={`p-2 rounded-lg transition-all duration-200 ${
                           remainingStock === 0
                             ? 'bg-slate-100 text-slate-350 dark:bg-zinc-950 dark:text-slate-650 cursor-not-allowed'
-                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm hover:scale-105 active:scale-95'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm hover:scale-105 active:scale-95'
                         }`}
                       >
                         <Plus size={14} />
@@ -410,7 +410,7 @@ export default function KasirPage() {
       <div className="hidden md:flex w-full xl:w-96 flex-col bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 overflow-hidden">
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-4 mb-4">
           <div className="flex items-center gap-2">
-            <ShoppingBag size={18} className="text-emerald-500" />
+            <ShoppingBag size={18} className="text-indigo-500" />
             <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">Keranjang Belanja</h3>
           </div>
           <span className="text-xs font-bold bg-slate-100 dark:bg-zinc-950 px-2 py-0.5 rounded-full text-slate-500">
@@ -484,7 +484,7 @@ export default function KasirPage() {
                   onClick={() => setPaymentMethod('cash')}
                   className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 ${
                     paymentMethod === 'cash'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                       : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
                   }`}
                 >
@@ -495,7 +495,7 @@ export default function KasirPage() {
                   onClick={() => setPaymentMethod('transfer')}
                   className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 ${
                     paymentMethod === 'transfer'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                      ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                       : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
                   }`}
                 >
@@ -523,7 +523,7 @@ export default function KasirPage() {
                   <p className="text-[10px] text-rose-500 font-semibold">Uang diterima kurang dari total tagihan!</p>
                 )}
                 {cashReceived !== '' && cashReceived >= getTotalAmount() && (
-                  <div className="flex justify-between items-center px-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <div className="flex justify-between items-center px-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                     <span>Kembalian:</span>
                     <span>{formatRupiah(cashReceived - getTotalAmount())}</span>
                   </div>
@@ -541,7 +541,7 @@ export default function KasirPage() {
             <button
               disabled={checkingOut || (paymentMethod === 'cash' && cashReceived !== '' && cashReceived < getTotalAmount())}
               onClick={handleCheckout}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white min-h-[44px] rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white min-h-[44px] rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {checkingOut && <Loader2 size={14} className="animate-spin" />}
               {checkingOut ? 'Memproses...' : 'Proses Transaksi & Cetak Struk'}
@@ -555,7 +555,7 @@ export default function KasirPage() {
         <div className="fixed bottom-20 left-4 right-4 z-40 md:hidden print:hidden">
           <button
             onClick={() => setShowMobileCart(true)}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white py-3.5 px-5 rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-between font-bold text-xs min-h-[44px] cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white py-3.5 px-5 rounded-xl shadow-lg shadow-indigo-600/20 flex items-center justify-between font-bold text-xs min-h-[44px] cursor-pointer"
           >
             <span className="flex items-center gap-2">
               <ShoppingBag size={16} />
@@ -572,7 +572,7 @@ export default function KasirPage() {
           <div className="bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-h-[85vh] flex flex-col p-6 overflow-hidden shadow-2xl text-slate-900 dark:text-zinc-50 transition-colors">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-4 mb-4">
               <div className="flex items-center gap-2">
-                <ShoppingBag size={18} className="text-emerald-500" />
+                <ShoppingBag size={18} className="text-indigo-500" />
                 <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Keranjang Belanja</h3>
               </div>
               <button 
@@ -650,7 +650,7 @@ export default function KasirPage() {
                       onClick={() => setPaymentMethod('cash')}
                       className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         paymentMethod === 'cash'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                           : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
                       }`}
                     >
@@ -662,7 +662,7 @@ export default function KasirPage() {
                       onClick={() => setPaymentMethod('transfer')}
                       className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         paymentMethod === 'transfer'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                           : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
                       }`}
                     >
@@ -690,7 +690,7 @@ export default function KasirPage() {
                       <p className="text-[10px] text-rose-500 font-semibold">Uang diterima kurang dari total tagihan!</p>
                     )}
                     {cashReceived !== '' && cashReceived >= getTotalAmount() && (
-                      <div className="flex justify-between items-center px-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                      <div className="flex justify-between items-center px-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                         <span>Kembalian:</span>
                         <span>{formatRupiah(cashReceived - getTotalAmount())}</span>
                       </div>
@@ -712,7 +712,7 @@ export default function KasirPage() {
                     await handleCheckout();
                     setShowMobileCart(false);
                   }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white py-3.5 rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px] cursor-pointer"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white py-3.5 rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 disabled:opacity-50 min-h-[44px] cursor-pointer"
                 >
                   {checkingOut && <Loader2 size={14} className="animate-spin" />}
                   {checkingOut ? 'Memproses...' : 'Proses Transaksi & Cetak Struk'}
@@ -727,7 +727,7 @@ export default function KasirPage() {
       {checkoutSuccess && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
           <div className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl max-w-sm w-full text-center border border-slate-200 dark:border-zinc-800/80 shadow-2xl flex flex-col items-center">
-            <div className="bg-emerald-100 dark:bg-emerald-950/40 p-3 rounded-full text-emerald-600 dark:text-emerald-400 mb-4 animate-bounce animate-duration-1000">
+            <div className="bg-indigo-100 dark:bg-indigo-950/40 p-3 rounded-full text-indigo-600 dark:text-indigo-400 mb-4 animate-bounce animate-duration-1000">
               <CheckCircle size={36} />
             </div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Transaksi Berhasil!</h3>
@@ -739,7 +739,7 @@ export default function KasirPage() {
               </div>
               <div className="flex justify-between text-[11px] text-slate-400 mt-1">
                 <span>Total:</span>
-                <span className="font-bold text-emerald-600">{formatRupiah(lastTotal)}</span>
+                <span className="font-bold text-indigo-600">{formatRupiah(lastTotal)}</span>
               </div>
               <div className="flex justify-between text-[11px] text-slate-400 mt-1">
                 <span>Metode:</span>
@@ -755,14 +755,14 @@ export default function KasirPage() {
             <div className="flex gap-3 w-full mt-2 mb-3">
               <button
                 onClick={() => window.print()}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-600/10 cursor-pointer"
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/10 cursor-pointer"
               >
                 <Printer size={14} />
                 Cetak Struk
               </button>
               <button
                 onClick={() => setCheckoutSuccess(false)}
-                className="px-4 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 min-h-[44px] rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                className="px-4 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 min-h-[44px] rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 Tutup
               </button>
@@ -842,7 +842,7 @@ export default function KasirPage() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2"
                 >
                   Tambahkan ke Keranjang
                 </button>

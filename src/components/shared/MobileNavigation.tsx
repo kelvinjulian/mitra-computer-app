@@ -29,11 +29,11 @@ export default function MobileNavigation() {
             href={item.href}
             className={`flex flex-col items-center justify-center gap-1 flex-1 h-full text-zinc-500 dark:text-zinc-400 ${
               isActive 
-                ? 'text-emerald-600 dark:text-emerald-400 font-bold' 
+                ? 'text-indigo-600 dark:text-indigo-400 font-bold' 
                 : 'hover:text-zinc-800 dark:hover:text-zinc-200'
             }`}
           >
-            <Icon size={20} className={isActive ? 'text-emerald-600 dark:text-emerald-400' : ''} />
+            <Icon size={20} className={isActive ? 'text-indigo-600 dark:text-indigo-400' : ''} />
             <span className="text-[10px] tracking-tight">{item.name}</span>
           </Link>
         );

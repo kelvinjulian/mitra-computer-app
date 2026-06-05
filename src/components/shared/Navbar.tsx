@@ -2,14 +2,13 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { 
-  Bell, 
-  Search, 
   Clock, 
   ChevronRight,
-  AlertTriangle,
-  Menu
+  Menu,
+  LogOut,
+  User
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ThemeToggle from '@/components/shared/ThemeToggle';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/shared/AuthProvider';
@@ -19,8 +18,8 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const router = useRouter();
   const { role } = useAuth();
   const [time, setTime] = useState<string>('');
-  const [hasLowStock, setHasLowStock] = useState(false);
-  const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Real-time clock
   useEffect(() => {
@@ -33,22 +32,17 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Check low stock once on mount — ping only if real low stock exists
+  // Close dropdown on outside click
   useEffect(() => {
-    const checkLowStock = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('stock, min_stock_threshold');
-        if (error || !data) return;
-        const hasLow = data.some((p) => p.stock <= p.min_stock_threshold);
-        setHasLowStock(hasLow);
-      } catch {
-        // silently fail — not critical
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
       }
     };
-    checkLowStock();
-  }, []);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropdownOpen]);
 
   // Page title mapping
   const getPageTitle = () => {
@@ -65,14 +59,15 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     }
   };
 
-  const handleInvoiceSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const term = invoiceSearch.trim();
-      router.push(`/finance?search=${encodeURIComponent(term)}`);
-      // Dispatch custom event in case we are already on the finance page
-      window.dispatchEvent(new CustomEvent('global-invoice-search', { detail: term }));
-    }
+  const handleLogout = async () => {
+    setDropdownOpen(false);
+    await supabase.auth.signOut();
+    router.push('/login');
   };
+
+  // Avatar initials & label
+  const avatarInitials = role === 'owner' ? 'OW' : 'ST';
+  const roleLabel = role === 'owner' ? 'Owner' : 'Staff Toko';
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">
@@ -104,63 +99,62 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
       </div>
 
       {/* Action Controls */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
         {/* Real-time Clock */}
         <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-full">
-          <Clock size={12} className="text-emerald-500" />
+          <Clock size={12} className="text-indigo-500" />
           <span>{time || '--:--:--'} WIB</span>
         </div>
 
-        {/* Global Invoice Search */}
-        <div className="relative w-48 md:w-60 hidden sm:block">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input 
-            type="text" 
-            placeholder="Cari no. invoice..." 
-            value={invoiceSearch}
-            onChange={(e) => setInvoiceSearch(e.target.value)}
-            onKeyDown={handleInvoiceSearch}
-            className="w-full pl-9 pr-4 py-1.5 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none focus:border-emerald-500 dark:focus:border-emerald-600 transition-colors placeholder:text-zinc-400"
-          />
-        </div>
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
-        {/* Theme & Notifications */}
-        <div className="flex items-center gap-3">
-          {/* Theme Toggle Component */}
-          <ThemeToggle />
-
-          {/* Low Stock Alert — ping ONLY when real low-stock products exist */}
-          <button 
-            className={`relative p-2 rounded-lg transition-all duration-200 ${
-              hasLowStock 
-                ? 'text-amber-500 hover:bg-amber-100/50 dark:hover:bg-amber-950/20 animate-pulse' 
-                : 'text-zinc-400 dark:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`} 
-            title={hasLowStock ? 'Ada produk stok menipis!' : 'Stok semua aman'}
+        {/* User Avatar Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            id="user-avatar-btn"
+            onClick={() => setDropdownOpen((o) => !o)}
+            className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center text-white font-bold text-sm select-none uppercase transition-colors duration-150 shadow-sm cursor-pointer"
+            title={roleLabel}
           >
-            <AlertTriangle size={18} />
-            {hasLowStock && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full animate-ping" />
-            )}
+            {avatarInitials}
           </button>
 
-          {/* Standard Notifications */}
-          <button className="relative p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-200">
-            <Bell size={18} />
-          </button>
-        </div>
+          {/* Dropdown Panel */}
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/80 overflow-hidden z-50 animate-fade-in">
+              {/* Header */}
+              <div className="px-4 py-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+                  {avatarInitials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate">{roleLabel}</p>
+                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">Mitra Computer</p>
+                </div>
+              </div>
 
-        {/* Staff Identity Widget */}
-        <div className="flex items-center gap-2 border-l border-zinc-200 dark:border-zinc-800 pl-4">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm select-none uppercase">
-            {role === 'owner' ? 'OW' : 'ST'}
-          </div>
-          <div className="text-left hidden lg:block">
-            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-              {role === 'owner' ? 'Owner' : 'Staff Toko'}
-            </p>
-            <span className="text-[9px] font-semibold text-zinc-400 uppercase">Mitra Computer</span>
-          </div>
+              {/* Menu Items */}
+              <div className="p-2">
+                <button
+                  onClick={() => { setDropdownOpen(false); }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                >
+                  <User size={13} className="text-slate-400 dark:text-zinc-500" />
+                  Profil Akun
+                </button>
+
+                <button
+                  id="logout-btn"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer mt-0.5"
+                >
+                  <LogOut size={13} />
+                  Keluar / Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

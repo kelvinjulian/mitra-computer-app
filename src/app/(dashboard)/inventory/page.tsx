@@ -207,12 +207,12 @@ export default function InventoryPage() {
       {/* Upper Info Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-6">
         <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-2 md:gap-4">
-          <div className="p-1.5 md:p-3 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+          <div className="p-1.5 md:p-3 bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
             <Package size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Jenis</p>
-            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : `${products.length} Item`}
             </h4>
           </div>
@@ -222,9 +222,9 @@ export default function InventoryPage() {
           <div className="p-1.5 md:p-3 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-500 rounded-xl shrink-0">
             <AlertTriangle size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Stok Tipis</p>
-            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : `${lowStockCount} Barang`}
             </h4>
           </div>
@@ -234,9 +234,9 @@ export default function InventoryPage() {
           <div className="p-1.5 md:p-3 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
             <SlidersHorizontal size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Value Stok</p>
-            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+            <h4 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : formatRupiah(totalValueStok)}
             </h4>
           </div>
@@ -255,13 +255,13 @@ export default function InventoryPage() {
                 placeholder="Cari di gudang..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-all duration-200"
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-all duration-200"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-50 outline-none cursor-pointer"
+              className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 pr-10 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-50 outline-none cursor-pointer appearance-auto"
             >
               <option value="all">Semua Kategori</option>
               <option value="komputer">Komputer</option>
@@ -284,7 +284,7 @@ export default function InventoryPage() {
             </button>
             <button
               onClick={() => setShowAddModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
             >
               <Plus size={14} />
               Tambah Produk Baru
@@ -304,7 +304,7 @@ export default function InventoryPage() {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-              <Loader2 className="animate-spin text-emerald-500" size={32} />
+              <Loader2 className="animate-spin text-indigo-500" size={32} />
               <p className="text-xs font-medium">Mengambil data dari Supabase...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
@@ -372,7 +372,7 @@ export default function InventoryPage() {
                         <div className="flex justify-center items-center gap-2">
                           <button 
                             onClick={() => setEditingProduct(product)}
-                            className="p-2.5 text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
+                            className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
                             title="Edit Barang"
                           >
                             <Edit size={14} />
@@ -416,7 +416,7 @@ export default function InventoryPage() {
                   name="name"
                   required
                   placeholder="Contoh: Asus VivoBook Intel i3" 
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -424,7 +424,7 @@ export default function InventoryPage() {
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kategori</label>
                   <select 
                     name="category"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
+                    className="w-full px-3 pr-10 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
                   >
                     <option value="komputer">Komputer</option>
                     <option value="laptop">Laptop</option>
@@ -489,7 +489,7 @@ export default function InventoryPage() {
                 <button 
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting && <Loader2 size={12} className="animate-spin" />}
                   Simpan Produk
@@ -521,7 +521,7 @@ export default function InventoryPage() {
                   name="name"
                   required
                   defaultValue={editingProduct.name}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -530,7 +530,7 @@ export default function InventoryPage() {
                   <select 
                     name="category"
                     defaultValue={editingProduct.category}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
+                    className="w-full px-3 pr-10 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
                   >
                     <option value="komputer">Komputer</option>
                     <option value="laptop">Laptop</option>
@@ -595,7 +595,7 @@ export default function InventoryPage() {
                 <button 
                   type="submit"
                   disabled={updating}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2 disabled:opacity-50"
                 >
                   {updating && <Loader2 size={12} className="animate-spin" />}
                   Simpan Perubahan

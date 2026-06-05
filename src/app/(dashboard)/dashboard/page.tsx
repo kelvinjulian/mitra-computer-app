@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
 import AuditLogsTimeline from './AuditLogsTimeline';
+import DateRangePicker, { DateRange } from '@/components/shared/DateRangePicker';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type Service = Database['public']['Tables']['services']['Row'];
@@ -35,6 +36,12 @@ export default function DashboardPage() {
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
 
+  // Date range state — default to today
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const today = new Date();
+    return { from: today, to: today };
+  });
+
   const formatRupiah = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
   };
@@ -44,7 +51,7 @@ export default function DashboardPage() {
       case 'antrean': return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
       case 'dicek': return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400';
       case 'menunggu_part': return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400';
-      case 'selesai': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400';
+      case 'selesai': return 'bg-blue-50 text-blue-600 font-medium dark:bg-blue-950/30 dark:text-blue-400';
       case 'batal': return 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400';
       default: return 'bg-zinc-100 text-zinc-800';
     }
@@ -55,7 +62,7 @@ export default function DashboardPage() {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' ' + date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (range: DateRange) => {
     try {
       setLoading(true);
       setError(null);
@@ -84,25 +91,31 @@ export default function DashboardPage() {
       setActiveServicesCount(activeSvcs.length);
       setRecentServices(allSvcs.slice(0, 5));
 
-      // 3. Fetch Transactions Today (POS)
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-      const isoToday = startOfToday.toISOString();
+      // 3. Fetch Transactions for the selected date range (POS)
+      const rangeFrom = range.from
+        ? (() => { const d = new Date(range.from!); d.setHours(0, 0, 0, 0); return d.toISOString(); })()
+        : new Date(0).toISOString();
+
+      const rangeTo = range.to
+        ? (() => { const d = new Date(range.to!); d.setHours(23, 59, 59, 999); return d.toISOString(); })()
+        : new Date().toISOString();
 
       const { data: txs, error: txErr } = await supabase
         .from('transactions')
         .select('total_amount')
-        .gte('created_at', isoToday);
+        .gte('created_at', rangeFrom)
+        .lte('created_at', rangeTo);
       if (txErr) throw txErr;
 
       const posRevenue = (txs || []).reduce((sum, t) => sum + t.total_amount, 0);
 
-      // 3b. Fetch Services Selesai Hari Ini
+      // 3b. Fetch Services Selesai in date range
       const { data: svcToday, error: svcTodayErr } = await supabase
         .from('services')
         .select('service_cost, part_cost')
         .eq('status', 'selesai')
-        .gte('updated_at', isoToday);
+        .gte('updated_at', rangeFrom)
+        .lte('updated_at', rangeTo);
       if (svcTodayErr) throw svcTodayErr;
 
       const serviceRevenue = (svcToday || []).reduce(
@@ -112,15 +125,19 @@ export default function DashboardPage() {
 
       setTodayRevenue(posRevenue + serviceRevenue);
 
-      // 4. Fetch Monthly Expenses
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      const firstDayOfMonthString = startOfMonth.toISOString().split('T')[0];
+      // 4. Fetch Expenses in date range
+      const fromDateStr = range.from
+        ? new Date(range.from).toISOString().split('T')[0]
+        : '1970-01-01';
+      const toDateStr = range.to
+        ? new Date(range.to).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
 
       const { data: exps, error: expErr } = await supabase
         .from('expenses')
         .select('amount')
-        .gte('date', firstDayOfMonthString);
+        .gte('date', fromDateStr)
+        .lte('date', toDateStr);
       if (expErr) throw expErr;
 
       const expensesSum = (exps || []).reduce((sum, e) => sum + e.amount, 0);
@@ -134,24 +151,31 @@ export default function DashboardPage() {
     }
   };
 
+  // Initial load
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(dateRange);
   }, []);
+
+  // Re-fetch when dateRange changes (triggered by Apply)
+  const handleDateRangeChange = (range: DateRange) => {
+    setDateRange(range);
+    fetchDashboardData(range);
+  };
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-40 text-slate-400 gap-3">
-        <Loader2 className="animate-spin text-emerald-500" size={48} />
+        <Loader2 className="animate-spin text-indigo-500" size={48} />
         <p className="text-sm font-medium">Memuat ikhtisar dashboard...</p>
       </div>
     );
   }
 
   const stats = [
-    { name: 'Omset Hari Ini', value: formatRupiah(todayRevenue), description: 'Gabungan Penjualan & Service Selesai Hari Ini', icon: TrendingUp, color: 'text-emerald-600 bg-emerald-500/10' },
+    { name: 'Omset Periode Ini', value: formatRupiah(todayRevenue), description: 'Gabungan Penjualan & Service Selesai', icon: TrendingUp, color: 'text-indigo-600 bg-indigo-500/10' },
     { name: 'Antrean Service', value: `${activeServicesCount} Device`, description: 'Antrean & sedang dicek', icon: Wrench, color: 'text-blue-600 bg-blue-500/10' },
     { name: 'Peringatan Stok', value: `${lowStockCount} Barang`, description: 'Segera restok dari Jambi', icon: AlertCircle, color: 'text-amber-600 bg-amber-500/10' },
-    { name: 'Pengeluaran Bulan Ini', value: formatRupiah(monthlyExpenses), description: 'Operasional ruko & operasional toko', icon: TrendingDown, color: 'text-rose-600 bg-rose-500/10' },
+    { name: 'Pengeluaran Periode', value: formatRupiah(monthlyExpenses), description: 'Operasional ruko & toko', icon: TrendingDown, color: 'text-rose-600 bg-rose-500/10' },
   ];
 
   return (
@@ -164,22 +188,38 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Top Welcome Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-emerald-600 to-teal-700 dark:from-zinc-900 dark:to-zinc-800 dark:border-zinc-800 p-6 rounded-2xl border border-emerald-500/20 dark:border-zinc-800 text-white shadow-xl">
+      {/* Streamlined Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Left: Page Title */}
         <div>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight">Selamat Datang di Mitra Computer</h2>
-          <p className="text-emerald-100 dark:text-zinc-400 text-xs mt-1 md:text-sm">Pantau stok barang, catat penjualan kasir, dan pantau status service fisik secara real-time.</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight">Overview Dashboard</h2>
+          <p className="text-xs text-slate-400 dark:text-zinc-500 mt-0.5 font-medium">
+            Pantau metrik real-time — data diperbarui otomatis setiap sesi.
+          </p>
         </div>
-        <div className="flex gap-3">
-          <Link href="/kasir" className="bg-white text-emerald-700 hover:bg-zinc-50 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-500 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 shadow-md flex items-center gap-2">
-            <ShoppingBag size={16} />
-            POS Kasir Baru
-          </Link>
-          <Link href="/service" className="bg-emerald-700/50 hover:bg-emerald-750/50 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white border border-emerald-500/30 dark:border-zinc-700 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 flex items-center gap-2">
-            <Wrench size={16} />
-            Terima Service
-          </Link>
+
+        {/* Right: Date Range Picker */}
+        <div className="shrink-0">
+          <DateRangePicker value={dateRange} onChange={handleDateRangeChange} />
         </div>
+      </div>
+
+      {/* Quick Action Buttons */}
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href="/kasir"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white transition-colors px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm shadow-indigo-600/20"
+        >
+          <ShoppingBag size={14} />
+          POS Kasir Baru
+        </Link>
+        <Link
+          href="/service"
+          className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 transition-colors px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2"
+        >
+          <Wrench size={14} />
+          Terima Service
+        </Link>
       </div>
 
       {/* Grid Stats Cards */}
@@ -187,7 +227,7 @@ export default function DashboardPage() {
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <div key={idx} className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 hover:border-emerald-500/30 transition-all duration-300 shadow-sm flex flex-col justify-between group text-slate-900 dark:text-zinc-50">
+            <div key={idx} className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-100 shadow-sm dark:border-zinc-800/80 hover:border-indigo-500/20 transition-all duration-300 hover:shadow-md flex flex-col justify-between group text-slate-900 dark:text-zinc-50">
               <div className="flex items-start justify-between gap-1">
                 <span className="text-slate-400 dark:text-zinc-500 text-[9px] md:text-xs font-semibold uppercase tracking-wider">{stat.name}</span>
                 <div className={`p-1.5 md:p-2.5 rounded-xl ${stat.color} transition-transform duration-300 group-hover:scale-110 shrink-0`}>
@@ -208,13 +248,13 @@ export default function DashboardPage() {
       {/* Main Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Repairs / Service list (Col-span 2) */}
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 lg:col-span-2 shadow-sm text-slate-900 dark:text-zinc-50">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-100 shadow-sm dark:border-zinc-800/80 lg:col-span-2 text-slate-900 dark:text-zinc-50">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-4 mb-6">
             <div>
               <h3 className="font-bold text-slate-900 dark:text-zinc-50 text-base">Antrean Service Aktif</h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400">Daftar perangkat yang sedang dikerjakan atau menunggu keputusan</p>
             </div>
-            <Link href="/service" className="text-xs font-semibold text-emerald-600 hover:text-emerald-500 flex items-center gap-1 transition-colors">
+            <Link href="/service" className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 flex items-center gap-1 transition-colors">
               Lihat Semua
               <ArrowRight size={14} />
             </Link>
@@ -232,13 +272,13 @@ export default function DashboardPage() {
                       <span className="text-[10px] text-slate-400 dark:text-zinc-500">• {formatTime(service.created_at)}</span>
                     </div>
                     <p className="text-xs font-bold text-slate-655 dark:text-zinc-400">{service.device_name}</p>
-                    <p className="text-[11px] text-slate-500 dark:text-zinc-500 italic">"{service.complaint}"</p>
+                    <p className="text-[11px] text-slate-500 dark:text-zinc-500 italic">&ldquo;{service.complaint}&rdquo;</p>
                   </div>
                   <div className="flex items-center gap-4 justify-between sm:justify-end">
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${getStatusColor(service.status)}`}>
                       {service.status.replace('_', ' ')}
                     </span>
-                    <Link href={`/service`} className="text-slate-400 hover:text-emerald-600 transition-colors">
+                    <Link href={`/service`} className="text-slate-400 hover:text-indigo-600 transition-colors">
                       <ArrowUpRight size={16} />
                     </Link>
                   </div>
@@ -249,7 +289,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Low Stock alerts (Col-span 1) */}
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between text-slate-900 dark:text-zinc-50">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-100 shadow-sm dark:border-zinc-800/80 flex flex-col justify-between text-slate-900 dark:text-zinc-50">
           <div>
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-4 mb-6">
               <div>
@@ -279,7 +319,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <Link href="/inventory" className="w-full mt-6 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-850 py-2.5 rounded-xl text-center text-xs font-semibold text-slate-700 dark:text-zinc-300 transition-colors block">
+          <Link href="/inventory" className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white transition-colors py-2.5 rounded-xl text-center text-xs font-semibold block shadow-sm shadow-indigo-600/10">
             Kelola Inventory
           </Link>
         </div>

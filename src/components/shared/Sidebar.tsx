@@ -8,7 +8,6 @@ import {
   Package, 
   Wrench, 
   TrendingUp, 
-  Settings, 
   LogOut,
   Laptop,
   Users
@@ -43,12 +42,12 @@ export default function Sidebar({ className = '' }: SidebarProps) {
     <aside className={`w-64 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 flex flex-col h-screen sticky top-0 transition-colors duration-200 print:hidden ${className}`}>
       {/* Header / Logo */}
       <div className="h-16 flex items-center px-6 gap-3 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="bg-emerald-600 p-2 rounded-lg text-white">
+        <div className="bg-indigo-600 p-2 rounded-lg text-white">
           <Laptop size={20} />
         </div>
         <div>
           <h1 className="font-bold text-zinc-900 dark:text-white text-sm tracking-tight leading-tight">Mitra Computer</h1>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold uppercase tracking-wider">Internal POS & Service</span>
+          <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">Internal POS &amp; Service</span>
         </div>
       </div>
 
@@ -64,14 +63,14 @@ export default function Sidebar({ className = '' }: SidebarProps) {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group ${
                 isActive 
-                  ? 'bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border-l-2 border-emerald-500 pl-3.5' 
+                  ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30 dark:text-indigo-400 border-l-2 border-indigo-600 pl-3.5' 
                   : 'hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-zinc-900 dark:hover:text-white'
               }`}
             >
               <Icon 
                 size={18} 
                 className={`transition-colors duration-200 ${
-                  isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
+                  isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
                 }`} 
               />
               <span>{item.name}</span>
@@ -83,7 +82,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
       {/* User Info / Footer */}
       <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800/80 mb-3">
-          <div className="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm uppercase">
+          <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm uppercase">
             {role === 'owner' ? 'OW' : 'ST'}
           </div>
           <div className="flex-1 min-w-0">
