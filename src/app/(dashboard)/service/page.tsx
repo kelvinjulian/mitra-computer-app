@@ -306,24 +306,24 @@ export default function ServicePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {role === 'viewer' ? (
-  <span
-    className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
-    title="Tidak memiliki akses"
-  >
-    <Phone size={14} />
-  </span>
-) : (
-  <a 
-    href={`https://wa.me/${svc.customer_whatsapp}`} 
-    target="_blank" 
-    rel="noreferrer"
-    onClick={(e) => e.stopPropagation()}
-    className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:scale-105 transition-transform"
-    title="Hubungi via WhatsApp"
-  >
-    <Phone size={14} />
-  </a>
-)}
+                    <span
+                      className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
+                      title="Tidak memiliki akses"
+                    >
+                      <Phone size={14} />
+                    </span>
+                  ) : (
+                    <a 
+                      href={`https://wa.me/${svc.customer_whatsapp}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:scale-105 transition-transform"
+                      title="Hubungi via WhatsApp"
+                    >
+                      <Phone size={14} />
+                    </a>
+                  )}
                     <ChevronRight size={16} className="text-slate-350 dark:text-slate-655" />
                   </div>
                 </div>
