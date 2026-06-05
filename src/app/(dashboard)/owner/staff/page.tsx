@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/shared/AuthProvider';
 import { 
   Users, 
   Plus, 
   Trash2, 
-  KeyRound, 
   Loader2, 
   AlertTriangle, 
   CheckCircle2, 
@@ -17,7 +17,8 @@ import {
   Calendar,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  Pencil
 } from 'lucide-react';
 
 interface StaffUser {
@@ -30,6 +31,7 @@ interface StaffUser {
 
 export default function StaffManagementPage() {
   const { role } = useAuth();
+  const router = useRouter();
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -37,10 +39,10 @@ export default function StaffManagementPage() {
   
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showResetModal, setShowResetModal] = useState<StaffUser | null>(null);
+  const [showEditModal, setShowEditModal] = useState<StaffUser | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -59,7 +61,14 @@ export default function StaffManagementPage() {
     try {
       setLoading(true);
       setError(null);
-      const headers = await getHeaders();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      };
       const res = await fetch('/api/admin/staff', { headers });
       const json = await res.json();
       
@@ -111,12 +120,15 @@ export default function StaffManagementPage() {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleEditStaff = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!showResetModal) return;
+    if (!showEditModal) return;
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const name = formData.get('name') as string;
+    const staffRole = formData.get('role') as string;
     const password = formData.get('password') as string;
 
     try {
@@ -124,17 +136,24 @@ export default function StaffManagementPage() {
       const res = await fetch('/api/admin/staff', {
         method: 'PUT',
         headers,
-        body: JSON.stringify({ id: showResetModal.id, password })
+        body: JSON.stringify({
+          id: showEditModal.id,
+          email,
+          name,
+          role: staffRole,
+          password: password || undefined
+        })
       });
       const json = await res.json();
 
-      if (!res.ok) throw new Error(json.error || 'Gagal mereset kata sandi.');
+      if (!res.ok) throw new Error(json.error || 'Gagal memperbarui data staf.');
 
-      showToast(`Kata sandi untuk ${showResetModal.name} berhasil diperbarui!`);
-      setShowResetModal(null);
-      setShowResetPassword(false);
+      showToast(`Data staf "${name}" berhasil diperbarui!`);
+      setShowEditModal(null);
+      setShowEditPassword(false);
+      fetchStaff();
     } catch (err: any) {
-      console.error('Error resetting password:', err.message);
+      console.error('Error updating staff:', err.message);
       showToast(err.message, 'error');
     } finally {
       setSubmitting(false);
@@ -170,6 +189,26 @@ export default function StaffManagementPage() {
     const date = new Date(dateString);
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
+
+  if (role !== 'owner') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4 max-w-lg mx-auto mt-12 animate-fade-in">
+        <div className="p-4 bg-indigo-50 dark:bg-indigo-950/35 rounded-full text-indigo-600/80">
+          <Lock size={48} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Akses Terbatas / Restricted Access</h3>
+        <p className="text-sm text-slate-500 dark:text-zinc-400 max-w-sm">
+          Hanya bisa diakses oleh Owner utama ruko.
+        </p>
+        <button
+          onClick={() => router.push('/')}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl px-5 py-3 transition-all shadow-md shadow-indigo-600/15 cursor-pointer"
+        >
+          Kembali ke Dashboard
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-900 dark:text-zinc-50">
@@ -247,12 +286,12 @@ export default function StaffManagementPage() {
                     {role === 'owner' && (
                       <td className="py-4 px-6 text-right space-x-2">
                         <button
-                          onClick={() => { setShowResetModal(staff); setShowResetPassword(false); }}
+                          onClick={() => { setShowEditModal(staff); setShowEditPassword(false); }}
                           className="py-2.5 px-3 text-slate-555 hover:text-indigo-655 dark:text-zinc-450 dark:hover:text-indigo-400 bg-slate-50 hover:bg-indigo-500/10 dark:bg-zinc-950 dark:hover:bg-indigo-950/30 rounded-xl transition-all inline-flex items-center gap-1 font-semibold text-[10px] cursor-pointer"
-                          title="Reset Kata Sandi"
+                          title="Edit Karyawan"
                         >
-                          <KeyRound size={12} />
-                          Sandi
+                          <Pencil size={12} />
+                          Edit
                         </button>
                         <button
                           onClick={() => handleDeleteStaff(staff)}
@@ -346,6 +385,7 @@ export default function StaffManagementPage() {
                 >
                   <option value="staff">Staff (Kasir)</option>
                   <option value="manager">Manager (Supervisor)</option>
+                  <option value="finance_staff">Stok & Keuangan (Finance Staff)</option>
                 </select>
               </div>
 
@@ -370,40 +410,82 @@ export default function StaffManagementPage() {
           </div>
         </div>
       )}
-
-      {/* Reset Password Modal Overlay */}
-      {showResetModal && (
+      {/* Edit Staff Modal Overlay */}
+      {showEditModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-              <h3 className="font-bold text-sm sm:text-base">Reset Sandi - {showResetModal.name}</h3>
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-sm sm:text-base">Edit Data Staff - {showEditModal.name}</h3>
               <button 
-                onClick={() => { setShowResetModal(null); setShowResetPassword(false); }} 
+                onClick={() => { setShowEditModal(null); setShowEditPassword(false); }} 
                 className="text-slate-400 hover:text-slate-650 dark:hover:text-zinc-200 font-bold"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleResetPassword} className="p-6 space-y-4">
+            <form onSubmit={handleEditStaff} className="p-6 space-y-4">
               <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Kata Sandi Baru</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Nama Lengkap</label>
+                <div className="relative">
+                  <UserPlus size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="text" 
+                    name="name" 
+                    defaultValue={showEditModal.name}
+                    placeholder="Contoh: Ahmad Fauzi" 
+                    required 
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500" 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Alamat Email</label>
+                <div className="relative">
+                  <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input 
+                    type="email" 
+                    name="email" 
+                    defaultValue={showEditModal.email}
+                    placeholder="ahmad@mitracomputer.com" 
+                    required 
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500" 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Peran Akses</label>
+                <select 
+                  name="role" 
+                  defaultValue={showEditModal.role}
+                  required 
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 cursor-pointer"
+                >
+                  <option value="staff">Staff (Kasir)</option>
+                  <option value="manager">Manager (Supervisor)</option>
+                  <option value="finance_staff">Stok & Keuangan (Finance Staff)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Kata Sandi Baru (Optional)</label>
                 <div className="relative">
                   <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input 
-                    type={showResetPassword ? 'text' : 'password'} 
+                    type={showEditPassword ? 'text' : 'password'} 
                     name="password" 
-                    placeholder="Masukkan sandi baru (min 6 karakter)" 
-                    required 
+                    placeholder="Biarkan kosong jika tidak ingin diubah" 
                     minLength={6}
                     className="w-full pl-9 pr-10 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500" 
                   />
                   <button
                     type="button"
-                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    onClick={() => setShowEditPassword(!showEditPassword)}
                     tabIndex={-1}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 p-0.5"
                   >
-                    {showResetPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {showEditPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
@@ -411,18 +493,18 @@ export default function StaffManagementPage() {
               <div className="flex gap-3 justify-end pt-4">
                 <button 
                   type="button" 
-                  onClick={() => { setShowResetModal(null); setShowResetPassword(false); }} 
-                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-550 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+                  onClick={() => { setShowEditModal(null); setShowEditPassword(false); }} 
+                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-555 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
                 >
                   Batal
                 </button>
                 <button 
                   type="submit" 
                   disabled={submitting} 
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center gap-2 disabled:opacity-50 animate-pulse animate-duration-1000"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting && <Loader2 size={12} className="animate-spin" />}
-                  Simpan Sandi Baru
+                  Simpan Perubahan
                 </button>
               </div>
             </form>

@@ -18,7 +18,7 @@ import { useLanguage } from '@/components/shared/LanguageProvider';
 export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [time, setTime] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -63,15 +63,9 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     }
   };
 
-  const handleLogout = async () => {
-    setDropdownOpen(false);
-    await supabase.auth.signOut();
-    router.push('/login');
-  };
-
   // Avatar initials & label
-  const avatarInitials = role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : 'ST';
-  const roleLabel = role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : t('Karyawan');
+  const avatarInitials = role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : 'ST';
+  const roleLabel = role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : role === 'finance_staff' ? t('Finance Staff') : t('Karyawan');
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">
@@ -127,36 +121,26 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
           {/* Dropdown Panel */}
           {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/80 overflow-hidden z-50 animate-popover-fade-in">
-              {/* Header */}
-              <div className="px-4 py-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/80 overflow-hidden z-50 animate-popover-fade-in p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-extrabold text-sm shrink-0">
                   {avatarInitials}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate">{roleLabel}</p>
-                  <p className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider truncate">Mitra Computer</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate">
+                    {user?.user_metadata?.name || 'User'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
+                    {user?.email || ''}
+                  </p>
                 </div>
               </div>
 
-              {/* Menu Items */}
-              <div className="p-2">
-                <button
-                  onClick={() => { setDropdownOpen(false); }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                >
-                  <User size={13} className="text-slate-400 dark:text-zinc-500" />
-                  {t('Profil Akun')}
-                </button>
-
-                <button
-                  id="logout-btn"
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer mt-0.5"
-                >
-                  <LogOut size={13} />
-                  {t('Keluar')}
-                </button>
+              <div className="border-t border-slate-100 dark:border-zinc-800 pt-2">
+                <span className="text-[9px] font-bold text-slate-450 dark:text-zinc-550 uppercase tracking-wider block mb-1">Peran Akses</span>
+                <span className="inline-block px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30">
+                  {role ? role.replace('_', ' ').toUpperCase() : ''}
+                </span>
               </div>
             </div>
           )}

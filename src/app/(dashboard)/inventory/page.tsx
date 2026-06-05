@@ -277,7 +277,7 @@ export default function InventoryPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 items-start md:items-auto self-start md:self-auto">
-            {role !== 'manager' && (
+            {role !== 'manager' && role !== 'finance_staff' && (
               <button
                 onClick={handleCleanGhostProducts}
                 disabled={cleaning}
@@ -288,13 +288,15 @@ export default function InventoryPage() {
                 {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
               </button>
             )}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
-            >
-              <Plus size={14} />
-              Tambah Produk Baru
-            </button>
+            {role !== 'finance_staff' && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                Tambah Produk Baru
+              </button>
+            )}
           </div>
         </div>
 
@@ -328,8 +330,8 @@ export default function InventoryPage() {
                   <th className="py-3.5 px-4 text-right hidden md:table-cell">Harga Modal</th>
                   <th className="py-3.5 px-4 text-right">Harga Jual</th>
                   <th className="py-3.5 px-4 text-center">Stok</th>
-                  <th className="py-3.5 px-4 text-center hidden sm:table-cell">Batas Min</th>
-                  <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>
+                  <th className={`py-3.5 px-4 text-center hidden sm:table-cell ${role === 'finance_staff' ? 'rounded-r-xl' : ''}`}>Batas Min</th>
+                  {role !== 'finance_staff' && <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -374,24 +376,26 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-center font-medium text-slate-400 hidden sm:table-cell">{product.min_stock_threshold}</td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="flex justify-center items-center gap-2">
-                          <button 
-                            onClick={() => setEditingProduct(product)}
-                            className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
-                            title="Edit Barang"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProduct(product.id, product.name)}
-                            className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
-                            title="Hapus Barang"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
+                      {role !== 'finance_staff' && (
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex justify-center items-center gap-2">
+                            <button 
+                              onClick={() => setEditingProduct(product)}
+                              className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
+                              title="Edit Barang"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
+                              className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
+                              title="Hapus Barang"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

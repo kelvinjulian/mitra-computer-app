@@ -20,11 +20,13 @@ import {
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
 import { useLanguage } from '@/components/shared/LanguageProvider';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type Service = Database['public']['Tables']['services']['Row'];
 
 export default function ServicePage() {
   const { t } = useLanguage();
+  const { role } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -235,13 +237,15 @@ export default function ServicePage() {
             </select>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
-          >
-            <Plus size={14} />
-            Terima Device Baru
-          </button>
+          {role !== 'finance_staff' && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <Plus size={14} />
+              Terima Device Baru
+            </button>
+          )}
         </div>
 
         {/* Database Error Alert */}
@@ -345,14 +349,16 @@ export default function ServicePage() {
                     </span>
                   </div>
                 </div>
-                <button 
-                  type="button"
-                  onClick={() => handleDeleteService(selectedService.id)}
-                  className="p-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-400 hover:scale-105 transition-transform self-start"
-                  title="Hapus Data Service"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {role !== 'finance_staff' && (
+                  <button 
+                    type="button"
+                    onClick={() => handleDeleteService(selectedService.id)}
+                    className="p-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-400 hover:scale-105 transition-transform self-start"
+                    title="Hapus Data Service"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Info Grid */}
@@ -378,6 +384,7 @@ export default function ServicePage() {
                   <select 
                     value={detailStatus}
                     onChange={(e) => setDetailStatus(e.target.value)}
+                    disabled={role === 'finance_staff'}
                     className="w-full px-3 pr-10 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                   >
                     <option value="antrean">Antrean</option>
@@ -394,6 +401,7 @@ export default function ServicePage() {
                     value={detailNotes}
                     onChange={(e) => setDetailNotes(e.target.value)}
                     placeholder="Tulis diagnosa & tindakan di sini..."
+                    disabled={role === 'finance_staff'}
                     className="w-full p-3 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 min-h-[5rem] resize-none"
                   />
                 </div>
@@ -409,6 +417,7 @@ export default function ServicePage() {
                         const cleanVal = e.target.value.replace(/[^0-9]/g, '');
                         setDetailServiceCost(cleanVal === '' ? 0 : parseInt(cleanVal, 10));
                       }}
+                      disabled={role === 'finance_staff'}
                       className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none dark:text-zinc-50 dark:placeholder:text-zinc-500"
                     />
                   </div>
@@ -421,6 +430,7 @@ export default function ServicePage() {
                         const cleanVal = e.target.value.replace(/[^0-9]/g, '');
                         setDetailPartCost(cleanVal === '' ? 0 : parseInt(cleanVal, 10));
                       }}
+                      disabled={role === 'finance_staff'}
                       className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none dark:text-zinc-50 dark:placeholder:text-zinc-500"
                     />
                   </div>
@@ -436,14 +446,16 @@ export default function ServicePage() {
                   {formatRupiah(detailServiceCost + detailPartCost)}
                 </span>
               </div>
-              <button
-                type="submit"
-                disabled={updating}
-                className="w-full bg-slate-900 dark:bg-zinc-50 text-white dark:text-slate-900 hover:opacity-90 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {updating && <Loader2 size={12} className="animate-spin" />}
-                Simpan Perubahan
-              </button>
+              {role !== 'finance_staff' && (
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="w-full bg-slate-900 dark:bg-zinc-50 text-white dark:text-slate-900 hover:opacity-90 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {updating && <Loader2 size={12} className="animate-spin" />}
+                  Simpan Perubahan
+                </button>
+              )}
             </div>
           </form>
         ) : (

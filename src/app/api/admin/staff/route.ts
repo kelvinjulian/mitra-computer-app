@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email, password, and name are required.' }, { status: 400 });
     }
 
-    const finalRole = (role === 'manager' || role === 'staff') ? role : 'staff';
+    const finalRole = (role === 'manager' || role === 'finance_staff' || role === 'staff') ? role : 'staff';
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
@@ -180,7 +180,7 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-// 4. PUT: Reset password
+// 4. PUT: Update employee profile (Name, Email, Role, and optional Password)
 export async function PUT(req: NextRequest) {
   const auth = await authenticateOwner(req);
   if (!auth.authenticated) {
@@ -189,10 +189,10 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, password } = body;
+    const { id, email, name, role, password } = body;
 
-    if (!id || !password) {
-      return NextResponse.json({ error: 'User ID and password are required.' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'User ID is required.' }, { status: 400 });
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -202,16 +202,36 @@ export async function PUT(req: NextRequest) {
       }
     });
 
-    // Update password in Auth
-    const { error: authErr } = await adminClient.auth.admin.updateUserById(id, {
-      password: password
-    });
+    const updateData: any = {};
+    if (email) updateData.email = email;
+    if (name || role) {
+      updateData.user_metadata = {};
+      if (name) updateData.user_metadata.name = name;
+      if (role) {
+        updateData.user_metadata.role = role;
+        updateData.app_metadata = { role };
+      }
+    }
+    if (password && password.trim().length >= 6) {
+      updateData.password = password;
+    }
 
+    // Update user in Auth
+    const { data: authUser, error: authErr } = await adminClient.auth.admin.updateUserById(id, updateData);
     if (authErr) throw authErr;
 
-    return NextResponse.json({ success: true });
+    // Update name in public.users DB table if name is provided
+    if (name) {
+      const { error: dbErr } = await adminClient
+        .from('users')
+        .update({ name })
+        .eq('id', id);
+      if (dbErr) throw dbErr;
+    }
+
+    return NextResponse.json({ success: true, data: authUser.user });
   } catch (err: any) {
     console.error('PUT Staff error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to reset password.' }, { status: 500 });
+    return NextResponse.json({ error: err.message || 'Failed to update staff.' }, { status: 500 });
   }
 }

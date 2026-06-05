@@ -15,10 +15,12 @@ import {
   User,
   Activity
 } from 'lucide-react';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type AuditLog = Database['public']['Tables']['audit_logs']['Row'];
 
 export default function AuditLogsTimeline() {
+  const { role } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,11 @@ export default function AuditLogsTimeline() {
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
   const fetchLogs = async () => {
+    if (role !== 'owner') {
+      setLogs([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -46,8 +53,12 @@ export default function AuditLogsTimeline() {
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    if (role === 'owner') {
+      fetchLogs();
+    } else {
+      setLoading(false);
+    }
+  }, [role]);
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -143,11 +154,22 @@ export default function AuditLogsTimeline() {
             <Loader2 className="animate-spin text-indigo-500" size={32} />
             <p className="text-xs font-medium">Memuat riwayat log audit...</p>
           </div>
-        ) : filteredLogs.length === 0 ? (
+        ) : (filteredLogs.length === 0 || role !== 'owner') ? (
           <div className="text-center py-20 text-slate-400">
             <Activity className="mx-auto text-slate-350 dark:text-zinc-700 mb-3" size={36} />
-            <p className="text-xs font-medium">Belum ada catatan log aktivitas</p>
-            <p className="text-[10px] text-slate-550">Segala transaksi kasir dan penghapusan kas akan dicatat secara otomatis di sini.</p>
+            {role !== 'owner' ? (
+              <>
+                <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">Akses Log Terbatas</p>
+                <p className="text-[10px] text-slate-500 dark:text-zinc-400 max-w-md mx-auto">
+                  Jejak audit riwayat transaksi dan data internal ruko hanya dapat dipantau secara penuh oleh Owner utama Mitra Computer.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-medium">Belum ada catatan log aktivitas</p>
+                <p className="text-[10px] text-slate-550">Segala transaksi kasir dan penghapusan kas akan dicatat secara otomatis di sini.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="relative border-l-2 border-slate-100 dark:border-zinc-800 ml-4 pl-6 space-y-6">
