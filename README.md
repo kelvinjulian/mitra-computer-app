@@ -72,7 +72,6 @@ For testing or staging review purposes, you can log into the environment using t
 
 | Target Testing Role | Email Address | Password | Access Scope |
 |---------------------|--------------|----------|--------------|
-| Owner Account | kelvin@mitra.com | juliankelvin871 | Super-Admin / Unrestricted |
 | Auditor / Guest (New) | Viewer@mitra.com | Viewer@1234 | Strictly Read-Only (Passive) |
 
 ---
