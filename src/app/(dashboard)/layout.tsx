@@ -61,8 +61,6 @@ export default function DashboardLayout({
           </div>
         </main>
 
-        {/* Bottom Nav Bar for Staff on Mobile */}
-        <MobileNavigation />
       </div>
     </div>
   );
