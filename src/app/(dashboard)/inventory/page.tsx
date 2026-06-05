@@ -13,10 +13,14 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import { useLanguage } from '@/components/shared/LanguageProvider';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function InventoryPage() {
+  const { t } = useLanguage();
+  const { role } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +40,10 @@ export default function InventoryPage() {
     try {
       setLoading(true);
       setError(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
       const { data, error: fetchErr } = await supabase
         .from('products')
         .select('*')
@@ -58,6 +66,7 @@ export default function InventoryPage() {
   // 2. Tambah Data (Create) ke Supabase
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (role === 'viewer') return;
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
@@ -97,7 +106,7 @@ export default function InventoryPage() {
   // 3. Edit Data (Update) di Supabase
   const handleEditProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingProduct) return;
+    if (role === 'viewer' || !editingProduct) return;
     setUpdating(true);
 
     const formData = new FormData(e.currentTarget);
@@ -135,6 +144,7 @@ export default function InventoryPage() {
 
   // 4. Hapus Data (Delete) dari Supabase
   const handleDeleteProduct = async (id: string, name: string) => {
+    if (role === 'viewer') return;
     if (!window.confirm(`Apakah Anda yakin ingin menghapus produk "${name}"?`)) return;
 
     try {
@@ -154,6 +164,7 @@ export default function InventoryPage() {
   // 5. Bersih-bersih Produk Hantu (produk berstok 0 hasil custom item lama)
   const [cleaning, setCleaning] = useState(false);
   const handleCleanGhostProducts = async () => {
+    if (role === 'viewer') return;
     const confirmed = window.confirm(
       'Ini akan menghapus SEMUA produk berstok 0 yang bukan terikat stok aktif dari inventory. Pastikan Anda sudah menghapus relasi transaction_items di Supabase terlebih dahulu (atau jalankan SQL: ALTER TABLE transaction_items ALTER COLUMN product_id DROP NOT NULL).\n\nLanjutkan?'
     );
@@ -207,12 +218,12 @@ export default function InventoryPage() {
       {/* Upper Info Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-6">
         <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex items-center gap-2 md:gap-4">
-          <div className="p-1.5 md:p-3 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+          <div className="p-1.5 md:p-3 bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
             <Package size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
-          <div>
-            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Jenis</p>
-            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('Total Jenis')}</p>
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : `${products.length} Item`}
             </h4>
           </div>
@@ -222,10 +233,10 @@ export default function InventoryPage() {
           <div className="p-1.5 md:p-3 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-500 rounded-xl shrink-0">
             <AlertTriangle size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
-          <div>
-            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Stok Tipis</p>
-            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
-              {loading ? '...' : `${lowStockCount} Barang`}
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('Stok Tipis')}</p>
+            <h4 className="text-sm md:text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 truncate">
+              {loading ? '...' : `${lowStockCount} ${t('Barang')}`}
             </h4>
           </div>
         </div>
@@ -234,9 +245,9 @@ export default function InventoryPage() {
           <div className="p-1.5 md:p-3 bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
             <SlidersHorizontal size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
-          <div>
-            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Value Stok</p>
-            <h4 className="text-sm md:text-xl font-extrabold text-slate-855 dark:text-white mt-0.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('Total Value Stok')}</p>
+            <h4 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : formatRupiah(totalValueStok)}
             </h4>
           </div>
@@ -255,13 +266,13 @@ export default function InventoryPage() {
                 placeholder="Cari di gudang..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-all duration-200"
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-all duration-200"
               />
             </div>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-50 outline-none cursor-pointer"
+              className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 pr-10 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-50 outline-none cursor-pointer appearance-auto"
             >
               <option value="all">Semua Kategori</option>
               <option value="komputer">Komputer</option>
@@ -273,22 +284,26 @@ export default function InventoryPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 items-start md:items-auto self-start md:self-auto">
-            <button
-              onClick={handleCleanGhostProducts}
-              disabled={cleaning}
-              title="Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)"
-              className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
-            >
-              {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-              {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
-            </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
-            >
-              <Plus size={14} />
-              Tambah Produk Baru
-            </button>
+            {role !== 'manager' && role !== 'finance_staff' && role !== 'viewer' && (
+              <button
+                onClick={handleCleanGhostProducts}
+                disabled={cleaning}
+                title="Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)"
+                className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+              >
+                {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
+              </button>
+            )}
+            {role !== 'finance_staff' && role !== 'viewer' && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                Tambah Produk Baru
+              </button>
+            )}
           </div>
         </div>
 
@@ -304,7 +319,7 @@ export default function InventoryPage() {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-              <Loader2 className="animate-spin text-emerald-500" size={32} />
+              <Loader2 className="animate-spin text-indigo-500" size={32} />
               <p className="text-xs font-medium">Mengambil data dari Supabase...</p>
             </div>
           ) : filteredProducts.length === 0 ? (
@@ -322,8 +337,8 @@ export default function InventoryPage() {
                   <th className="py-3.5 px-4 text-right hidden md:table-cell">Harga Modal</th>
                   <th className="py-3.5 px-4 text-right">Harga Jual</th>
                   <th className="py-3.5 px-4 text-center">Stok</th>
-                  <th className="py-3.5 px-4 text-center hidden sm:table-cell">Batas Min</th>
-                  <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>
+                  <th className={`py-3.5 px-4 text-center hidden sm:table-cell ${(role === 'finance_staff' || role === 'viewer') ? 'rounded-r-xl' : ''}`}>Batas Min</th>
+                  {role !== 'finance_staff' && role !== 'viewer' && <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -368,24 +383,26 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-center font-medium text-slate-400 hidden sm:table-cell">{product.min_stock_threshold}</td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="flex justify-center items-center gap-2">
-                          <button 
-                            onClick={() => setEditingProduct(product)}
-                            className="p-2.5 text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
-                            title="Edit Barang"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteProduct(product.id, product.name)}
-                            className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
-                            title="Hapus Barang"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
+                      {role !== 'finance_staff' && role !== 'viewer' && (
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex justify-center items-center gap-2">
+                            <button 
+                              onClick={() => setEditingProduct(product)}
+                              className="p-2.5 text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
+                              title="Edit Barang"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteProduct(product.id, product.name)}
+                              className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-all cursor-pointer" 
+                              title="Hapus Barang"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -397,8 +414,8 @@ export default function InventoryPage() {
 
       {/* Add Product Modal Overlay */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-fade-in">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Tambah Produk Baru</h3>
               <button 
@@ -416,7 +433,7 @@ export default function InventoryPage() {
                   name="name"
                   required
                   placeholder="Contoh: Asus VivoBook Intel i3" 
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -424,7 +441,7 @@ export default function InventoryPage() {
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kategori</label>
                   <select 
                     name="category"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
+                    className="w-full px-3 pr-10 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
                   >
                     <option value="komputer">Komputer</option>
                     <option value="laptop">Laptop</option>
@@ -489,7 +506,7 @@ export default function InventoryPage() {
                 <button 
                   type="submit"
                   disabled={submitting}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting && <Loader2 size={12} className="animate-spin" />}
                   Simpan Produk
@@ -502,8 +519,8 @@ export default function InventoryPage() {
 
       {/* Edit Product Modal Overlay */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-fade-in">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Edit Produk</h3>
               <button 
@@ -521,7 +538,7 @@ export default function InventoryPage() {
                   name="name"
                   required
                   defaultValue={editingProduct.name}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -530,7 +547,7 @@ export default function InventoryPage() {
                   <select 
                     name="category"
                     defaultValue={editingProduct.category}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
+                    className="w-full px-3 pr-10 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none cursor-pointer dark:text-zinc-50"
                   >
                     <option value="komputer">Komputer</option>
                     <option value="laptop">Laptop</option>
@@ -595,7 +612,7 @@ export default function InventoryPage() {
                 <button 
                   type="submit"
                   disabled={updating}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2 disabled:opacity-50"
                 >
                   {updating && <Loader2 size={12} className="animate-spin" />}
                   Simpan Perubahan

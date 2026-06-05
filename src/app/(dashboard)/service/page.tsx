@@ -19,10 +19,14 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import { useLanguage } from '@/components/shared/LanguageProvider';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type Service = Database['public']['Tables']['services']['Row'];
 
 export default function ServicePage() {
+  const { t } = useLanguage();
+  const { role } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +62,10 @@ export default function ServicePage() {
     try {
       setLoading(true);
       setError(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
       const { data, error: fetchErr } = await supabase
         .from('services')
         .select('*')
@@ -97,7 +105,7 @@ export default function ServicePage() {
       case 'antrean': return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
       case 'dicek': return 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400';
       case 'menunggu_part': return 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400';
-      case 'selesai': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400';
+      case 'selesai': return 'bg-blue-50 text-blue-600 font-medium dark:bg-blue-950/30 dark:text-blue-400';
       case 'batal': return 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400';
       default: return 'bg-zinc-100 text-zinc-800';
     }
@@ -105,6 +113,7 @@ export default function ServicePage() {
 
   const handleAddService = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (role === 'viewer') return;
     setSubmitting(true);
     setError(null);
 
@@ -144,7 +153,7 @@ export default function ServicePage() {
 
   const handleUpdateService = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedService || updating) return;
+    if (role === 'viewer' || !selectedService || updating) return;
     setUpdating(true);
 
     try {
@@ -181,6 +190,7 @@ export default function ServicePage() {
   };
 
   const handleDeleteService = async (id: string) => {
+    if (role === 'viewer') return;
     if (!window.confirm("Apakah Anda yakin ingin menghapus data service ini?")) return;
     try {
       const { error: deleteErr } = await supabase
@@ -216,13 +226,13 @@ export default function ServicePage() {
                 placeholder="Cari nama pelanggan / device..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-colors"
               />
             </div>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-50 outline-none cursor-pointer"
+              className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl px-3 pr-10 py-2 text-xs font-semibold text-slate-500 dark:text-zinc-50 outline-none cursor-pointer appearance-auto"
             >
               <option value="all">Semua Status</option>
               <option value="antrean">Antrean</option>
@@ -233,13 +243,15 @@ export default function ServicePage() {
             </select>
           </div>
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
-          >
-            <Plus size={14} />
-            Terima Device Baru
-          </button>
+          {role !== 'finance_staff' && role !== 'viewer' && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <Plus size={14} />
+              Terima Device Baru
+            </button>
+          )}
         </div>
 
         {/* Database Error Alert */}
@@ -254,7 +266,7 @@ export default function ServicePage() {
         <div className="h-[50vh] md:h-auto flex-1 overflow-y-auto pr-1 space-y-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-              <Loader2 className="animate-spin text-emerald-500" size={32} />
+              <Loader2 className="animate-spin text-indigo-500" size={32} />
               <p className="text-xs font-medium">Mengambil data service dari database...</p>
             </div>
           ) : filteredServices.length === 0 ? (
@@ -270,7 +282,7 @@ export default function ServicePage() {
                 onClick={() => setSelectedService(svc)}
                 className={`p-3 md:p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 ${
                   selectedService?.id === svc.id 
-                    ? 'border-emerald-500 bg-emerald-50/[0.02] dark:bg-emerald-950/10'
+                    ? 'border-indigo-500 bg-indigo-50/[0.02] dark:bg-indigo-950/10'
                     : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/20'
                 }`}
               >
@@ -288,21 +300,30 @@ export default function ServicePage() {
                 <div className="flex items-center justify-between md:justify-end gap-6 border-t md:border-t-0 pt-3 md:pt-0 border-zinc-100 dark:border-zinc-800">
                   <div className="text-right">
                     <span className="text-[10px] text-zinc-400 block">Total Biaya</span>
-                    <span className="text-xs font-extrabold text-zinc-850 dark:text-zinc-200">
+                    <span className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200">
                       {formatRupiah((svc.service_cost || 0) + (svc.part_cost || 0))}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    {role === 'viewer' ? (
+                    <span
+                      className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-400 dark:text-zinc-600 cursor-not-allowed"
+                      title="Tidak memiliki akses"
+                    >
+                      <Phone size={14} />
+                    </span>
+                  ) : (
                     <a 
                       href={`https://wa.me/${svc.customer_whatsapp}`} 
                       target="_blank" 
                       rel="noreferrer"
                       onClick={(e) => e.stopPropagation()}
-                      className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 hover:scale-105 transition-transform"
+                      className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 hover:scale-105 transition-transform"
                       title="Hubungi via WhatsApp"
                     >
                       <Phone size={14} />
                     </a>
+                  )}
                     <ChevronRight size={16} className="text-slate-350 dark:text-slate-655" />
                   </div>
                 </div>
@@ -343,14 +364,16 @@ export default function ServicePage() {
                     </span>
                   </div>
                 </div>
-                <button 
-                  type="button"
-                  onClick={() => handleDeleteService(selectedService.id)}
-                  className="p-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-400 hover:scale-105 transition-transform self-start"
-                  title="Hapus Data Service"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {role !== 'finance_staff' && role !== 'viewer' && (
+                  <button 
+                    type="button"
+                    onClick={() => handleDeleteService(selectedService.id)}
+                    className="p-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-red-500 dark:text-red-400 hover:scale-105 transition-transform self-start"
+                    title="Hapus Data Service"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Info Grid */}
@@ -376,7 +399,8 @@ export default function ServicePage() {
                   <select 
                     value={detailStatus}
                     onChange={(e) => setDetailStatus(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-850 rounded-xl text-xs font-bold outline-none cursor-pointer"
+                    disabled={role === 'finance_staff' || role === 'viewer'}
+                    className="w-full px-3 pr-10 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                   >
                     <option value="antrean">Antrean</option>
                     <option value="dicek">Dicek</option>
@@ -392,7 +416,8 @@ export default function ServicePage() {
                     value={detailNotes}
                     onChange={(e) => setDetailNotes(e.target.value)}
                     placeholder="Tulis diagnosa & tindakan di sini..."
-                    className="w-full p-3 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 min-h-[5rem] resize-none"
+                    disabled={role === 'finance_staff' || role === 'viewer'}
+                    className="w-full p-3 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 min-h-[5rem] resize-none"
                   />
                 </div>
 
@@ -407,6 +432,7 @@ export default function ServicePage() {
                         const cleanVal = e.target.value.replace(/[^0-9]/g, '');
                         setDetailServiceCost(cleanVal === '' ? 0 : parseInt(cleanVal, 10));
                       }}
+                      disabled={role === 'finance_staff' || role === 'viewer'}
                       className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none dark:text-zinc-50 dark:placeholder:text-zinc-500"
                     />
                   </div>
@@ -419,6 +445,7 @@ export default function ServicePage() {
                         const cleanVal = e.target.value.replace(/[^0-9]/g, '');
                         setDetailPartCost(cleanVal === '' ? 0 : parseInt(cleanVal, 10));
                       }}
+                      disabled={role === 'finance_staff' || role === 'viewer'}
                       className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none dark:text-zinc-50 dark:placeholder:text-zinc-500"
                     />
                   </div>
@@ -428,20 +455,22 @@ export default function ServicePage() {
 
             {/* Actions */}
             <div className="border-t border-slate-100 dark:border-zinc-800 pt-4 mt-6 space-y-2">
-              <div className="flex justify-between items-center bg-emerald-500/5 p-3 rounded-xl border border-emerald-500/10">
-                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Total Biaya:</span>
-                <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div className="flex justify-between items-center bg-indigo-500/5 p-3 rounded-xl border border-indigo-500/10">
+                <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400">Total Biaya:</span>
+                <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
                   {formatRupiah(detailServiceCost + detailPartCost)}
                 </span>
               </div>
-              <button
-                type="submit"
-                disabled={updating}
-                className="w-full bg-slate-900 dark:bg-zinc-50 text-white dark:text-slate-900 hover:opacity-90 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {updating && <Loader2 size={12} className="animate-spin" />}
-                Simpan Perubahan
-              </button>
+              {role !== 'finance_staff' && role !== 'viewer' && (
+                <button
+                  type="submit"
+                  disabled={updating}
+                  className="w-full bg-slate-900 dark:bg-zinc-50 text-white dark:text-slate-900 hover:opacity-90 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {updating && <Loader2 size={12} className="animate-spin" />}
+                  Simpan Perubahan
+                </button>
+              )}
             </div>
           </form>
         ) : (
@@ -455,8 +484,8 @@ export default function ServicePage() {
 
       {/* Add Service Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Terima Perangkat Baru</h3>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-650 font-bold">✕</button>
@@ -482,7 +511,7 @@ export default function ServicePage() {
               </div>
               <div className="flex gap-3 justify-end pt-4">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:hover:bg-zinc-950 transition-colors">Batal</button>
-                <button type="submit" disabled={submitting} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center gap-2 disabled:opacity-50">
+                <button type="submit" disabled={submitting} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/10 flex items-center gap-2 disabled:opacity-50">
                   {submitting && <Loader2 size={12} className="animate-spin" />}
                   Daftarkan Service
                 </button>
@@ -494,7 +523,7 @@ export default function ServicePage() {
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg animate-fade-in ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' 
+            ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300' 
             : 'bg-rose-50 dark:bg-rose-950/80 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}

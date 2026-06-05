@@ -2,25 +2,27 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { 
-  Bell, 
-  Search, 
   Clock, 
   ChevronRight,
-  AlertTriangle,
-  Menu
+  Menu,
+  LogOut,
+  User,
+  Globe
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ThemeToggle from '@/components/shared/ThemeToggle';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/shared/AuthProvider';
+import { useLanguage } from '@/components/shared/LanguageProvider';
 
 export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [time, setTime] = useState<string>('');
-  const [hasLowStock, setHasLowStock] = useState(false);
-  const [invoiceSearch, setInvoiceSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Real-time clock
   useEffect(() => {
@@ -33,52 +35,43 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Check low stock once on mount — ping only if real low stock exists
+  // Close dropdown on outside click
   useEffect(() => {
-    const checkLowStock = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('stock, min_stock_threshold');
-        if (error || !data) return;
-        const hasLow = data.some((p) => p.stock <= p.min_stock_threshold);
-        setHasLowStock(hasLow);
-      } catch {
-        // silently fail — not critical
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
       }
     };
-    checkLowStock();
-  }, []);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropdownOpen]);
 
   // Page title mapping
   const getPageTitle = () => {
     const segments = pathname.split('/').filter(Boolean);
-    if (segments.length === 0) return 'Beranda';
+    if (segments.length === 0) return t('Beranda');
     const rawTitle = segments[segments.length - 1];
     switch (rawTitle) {
-      case 'dashboard': return 'Dashboard Overview';
-      case 'kasir': return 'POS Kasir Toko';
-      case 'inventory': return 'Manajemen Inventory';
-      case 'service': return 'Pelacakan Reparasi';
-      case 'finance': return 'Arus Kas & Buku Keuangan';
+      case 'dashboard': return 'Dashboard'; // Keep "Dashboard" unchanged
+      case 'kasir': return t('POS Kasir');
+      case 'inventory': return t('Inventory Stok');
+      case 'service': return t('Pelacakan Service');
+      case 'finance': return t('Arus Kas / Finansial');
+      case 'staff': return t('Kelola Staf');
       default: return rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
     }
   };
 
-  const handleInvoiceSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const term = invoiceSearch.trim();
-      router.push(`/finance?search=${encodeURIComponent(term)}`);
-      // Dispatch custom event in case we are already on the finance page
-      window.dispatchEvent(new CustomEvent('global-invoice-search', { detail: term }));
-    }
-  };
+  // Avatar initials & label
+  const avatarInitials = role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : role === 'viewer' ? 'VI' : 'ST';
+  const roleLabel = role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : role === 'finance_staff' ? t('Finance Staff') : role === 'viewer' ? t('Viewer') : t('Karyawan');
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">
       {/* Page Breadcrumbs */}
       <div className="flex items-center gap-2">
-        {role === 'owner' && (
+        {(role === 'owner' || role === 'manager') && (
           <button
             onClick={onMenuClick}
             className="p-2 md:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
@@ -90,77 +83,67 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 hidden md:inline">Mitra Computer</span>
         <ChevronRight size={12} className="text-zinc-300 dark:text-zinc-700 hidden md:inline" />
         <span className="text-sm md:text-base font-semibold text-zinc-800 dark:text-zinc-100 max-w-[180px] md:max-w-none truncate" title={getPageTitle()}>
-          <span className="inline md:hidden">
-            {getPageTitle() === 'Dashboard Overview' ? 'Dashboard' :
-             getPageTitle() === 'POS Kasir Toko' ? 'POS Kasir' :
-             getPageTitle() === 'Manajemen Inventory' ? 'Inventory' :
-             getPageTitle() === 'Pelacakan Reparasi' ? 'Service' :
-             getPageTitle() === 'Arus Kas & Buku Keuangan' ? 'Arus Kas' : getPageTitle()}
-          </span>
-          <span className="hidden md:inline">
-            {getPageTitle()}
-          </span>
+          <span>{getPageTitle()}</span>
         </span>
       </div>
 
       {/* Action Controls */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Real-time Clock */}
         <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-full">
-          <Clock size={12} className="text-emerald-500" />
+          <Clock size={12} className="text-indigo-500" />
           <span>{time || '--:--:--'} WIB</span>
         </div>
 
-        {/* Global Invoice Search */}
-        <div className="relative w-48 md:w-60 hidden sm:block">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-          <input 
-            type="text" 
-            placeholder="Cari no. invoice..." 
-            value={invoiceSearch}
-            onChange={(e) => setInvoiceSearch(e.target.value)}
-            onKeyDown={handleInvoiceSearch}
-            className="w-full pl-9 pr-4 py-1.5 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg text-xs outline-none focus:border-emerald-500 dark:focus:border-emerald-600 transition-colors placeholder:text-zinc-400"
-          />
-        </div>
+        {/* Language Switcher */}
+        <button
+          onClick={() => setLanguage(language === 'id' ? 'en' : 'id')}
+          className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-indigo-650 dark:hover:text-indigo-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+          title={language === 'id' ? 'Switch to English' : 'Ubah ke Bahasa Indonesia'}
+        >
+          <Globe size={16} />
+          <span className="uppercase">{language}</span>
+        </button>
 
-        {/* Theme & Notifications */}
-        <div className="flex items-center gap-3">
-          {/* Theme Toggle Component */}
-          <ThemeToggle />
+        {/* Theme Toggle */}
+        <ThemeToggle />
 
-          {/* Low Stock Alert — ping ONLY when real low-stock products exist */}
-          <button 
-            className={`relative p-2 rounded-lg transition-all duration-200 ${
-              hasLowStock 
-                ? 'text-amber-500 hover:bg-amber-100/50 dark:hover:bg-amber-950/20 animate-pulse' 
-                : 'text-zinc-400 dark:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`} 
-            title={hasLowStock ? 'Ada produk stok menipis!' : 'Stok semua aman'}
+        {/* User Avatar Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            id="user-avatar-btn"
+            onClick={() => setDropdownOpen((o) => !o)}
+            className="w-9 h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center text-white font-bold text-sm select-none uppercase transition-colors duration-150 shadow-sm cursor-pointer"
+            title={roleLabel}
           >
-            <AlertTriangle size={18} />
-            {hasLowStock && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full animate-ping" />
-            )}
+            {avatarInitials}
           </button>
 
-          {/* Standard Notifications */}
-          <button className="relative p-2 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-200">
-            <Bell size={18} />
-          </button>
-        </div>
+          {/* Dropdown Panel */}
+          {dropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/80 overflow-hidden z-50 animate-popover-fade-in p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-extrabold text-sm shrink-0">
+                  {avatarInitials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate">
+                    {user?.user_metadata?.name || 'User'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">
+                    {user?.email || ''}
+                  </p>
+                </div>
+              </div>
 
-        {/* Staff Identity Widget */}
-        <div className="flex items-center gap-2 border-l border-zinc-200 dark:border-zinc-800 pl-4">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-bold text-sm select-none uppercase">
-            {role === 'owner' ? 'OW' : 'ST'}
-          </div>
-          <div className="text-left hidden lg:block">
-            <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
-              {role === 'owner' ? 'Owner' : 'Staff Toko'}
-            </p>
-            <span className="text-[9px] font-semibold text-zinc-400 uppercase">Mitra Computer</span>
-          </div>
+              <div className="border-t border-slate-100 dark:border-zinc-800 pt-2">
+                <span className="text-[9px] font-bold text-slate-450 dark:text-zinc-550 uppercase tracking-wider block mb-1">Peran Akses</span>
+                <span className="inline-block px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30">
+                  {role ? role.replace('_', ' ').toUpperCase() : ''}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>

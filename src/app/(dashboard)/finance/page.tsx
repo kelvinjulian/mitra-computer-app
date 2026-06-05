@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import DateRangePicker, { DateRange } from '@/components/shared/DateRangePicker';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type Expense = Database['public']['Tables']['expenses']['Row'];
 interface MappedIncome {
@@ -35,6 +37,7 @@ interface MappedIncome {
 }
 
 export default function FinancePage() {
+  const { role } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<MappedIncome[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,8 +54,7 @@ export default function FinancePage() {
   const [serviceDetail, setServiceDetail] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [deletingTx, setDeletingTx] = useState(false);
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [dateRange, setDateRange] = useState<DateRange>({ from: null, to: null });
   const [searchInvoiceTerm, setSearchInvoiceTerm] = useState('');
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -188,6 +190,10 @@ export default function FinancePage() {
 
   const handleDeleteTransaction = async () => {
     if (!selectedIncome) return;
+    if (role === 'manager' || role === 'finance_staff' || role === 'staff' || role === 'viewer') {
+      showToast('Akses ditolak: Anda tidak memiliki wewenang untuk menghapus transaksi.', 'error');
+      return;
+    }
 
     const confirmDelete = window.confirm(
       "Apakah Anda yakin ingin menghapus/membatalkan catatan transaksi ini secara permanen dari database?"
@@ -263,6 +269,11 @@ export default function FinancePage() {
       setLoading(true);
       setError(null);
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
+
       // 1. Ambil data transactions
       const { data: txs, error: txsErr } = await supabase
         .from('transactions')
@@ -272,7 +283,7 @@ export default function FinancePage() {
       // 2. Ambil data service yang selesai (selesai)
       const { data: svcs, error: svcsErr } = await supabase
         .from('services')
-        .select('id, device_name, customer_name, service_cost, part_cost, created_at')
+        .select('id, device_name, customer_name, service_cost, part_cost, created_at, updated_at')
         .eq('status', 'selesai');
       if (svcsErr) throw svcsErr;
 
@@ -331,7 +342,7 @@ export default function FinancePage() {
         id: s.id,
         source: `Service - ${s.device_name} (${s.customer_name})`,
         amount: (s.service_cost || 0) + (s.part_cost || 0),
-        date: new Date(s.created_at).toISOString().split('T')[0],
+        date: new Date(s.updated_at).toISOString().split('T')[0],
         type: 'service' as const,
         netMargin: s.service_cost || 0,  // margin bersih service = biaya jasa teknisi
         customerName: s.customer_name
@@ -376,25 +387,12 @@ export default function FinancePage() {
     };
   }, []);
 
-  const handleQuickDateFilter = (type: 'today' | 'month' | 'all') => {
-    const now = new Date();
-    if (type === 'today') {
-      const todayStr = now.toISOString().split('T')[0];
-      setDateFrom(todayStr);
-      setDateTo(todayStr);
-    } else if (type === 'month') {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      setDateFrom(startOfMonth.toISOString().split('T')[0]);
-      setDateTo(endOfMonth.toISOString().split('T')[0]);
-    } else {
-      setDateFrom('');
-      setDateTo('');
-    }
-  };
-
   const handleSaveExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (role === 'staff' || role === 'viewer') {
+      showToast('Akses ditolak: Anda tidak memiliki wewenang untuk mencatat pengeluaran.', 'error');
+      return;
+    }
     setSubmitting(true);
     
     const formData = new FormData(e.currentTarget);
@@ -436,6 +434,10 @@ export default function FinancePage() {
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
+    if (role === 'staff' || role === 'viewer') {
+      showToast('Akses ditolak: Anda tidak memiliki wewenang untuk menghapus pengeluaran.', 'error');
+      return;
+    }
     if (!window.confirm('Apakah Anda yakin ingin menghapus catatan pengeluaran ini?')) {
       return;
     }
@@ -455,6 +457,10 @@ export default function FinancePage() {
       showToast('Gagal menghapus pengeluaran: ' + err.message, 'error');
     }
   };
+
+  // Convert DateRange to date string for comparison
+  const dateFrom = dateRange.from ? dateRange.from.toISOString().split('T')[0] : '';
+  const dateTo = dateRange.to ? dateRange.to.toISOString().split('T')[0] : '';
 
   // Date filter logic for incomes (general date range filter)
   const dateFilteredIncomes = incomes.filter((inc) => {
@@ -500,7 +506,7 @@ export default function FinancePage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-40 text-slate-400 gap-3">
-        <Loader2 className="animate-spin text-emerald-500" size={48} />
+        <Loader2 className="animate-spin text-indigo-500" size={48} />
         <p className="text-sm font-medium">Memuat data keuangan dari database...</p>
       </div>
     );
@@ -523,71 +529,15 @@ export default function FinancePage() {
           <p className="text-xs text-slate-500 dark:text-zinc-400">Kelola arus kas masuk, pengeluaran operasional ruko, dan pantau profit bersih.</p>
         </div>
         
-        {/* Date Range Filter (Global) */}
+        {/* Date Range Filter (Global) — uses shared DateRangePicker component */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Quick Filters */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-950 p-1 rounded-xl border border-slate-200 dark:border-zinc-800/80">
+          <DateRangePicker
+            value={dateRange}
+            onChange={(range) => setDateRange(range)}
+          />
+          {(dateRange.from || dateRange.to) && (
             <button
-              onClick={() => handleQuickDateFilter('today')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                dateFrom === new Date().toISOString().split('T')[0] && dateTo === new Date().toISOString().split('T')[0]
-                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              Hari Ini
-            </button>
-            <button
-              onClick={() => handleQuickDateFilter('month')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                dateFrom === new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] &&
-                dateTo === new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
-                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              Bulan Ini
-            </button>
-            <button
-              onClick={() => handleQuickDateFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
-                !dateFrom && !dateTo
-                  ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-              }`}
-            >
-              Semua
-            </button>
-          </div>
-
-          {/* Date Picker Range Inputs */}
-          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-3 py-1.5 w-full sm:w-auto">
-              <Calendar size={12} className="text-slate-400 shrink-0" />
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="bg-transparent text-[11px] text-slate-700 dark:text-zinc-300 outline-none cursor-pointer w-full sm:w-28"
-                title="Dari tanggal"
-              />
-            </div>
-            <span className="text-[10px] text-slate-400">s/d</span>
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-xl px-3 py-1.5 w-full sm:w-auto">
-              <Calendar size={12} className="text-slate-400 shrink-0" />
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="bg-transparent text-[11px] text-slate-700 dark:text-zinc-300 outline-none cursor-pointer w-full sm:w-28"
-                title="Hingga tanggal"
-              />
-            </div>
-          </div>
-
-          {(dateFrom || dateTo) && (
-            <button
-              onClick={() => { setDateFrom(''); setDateTo(''); }}
+              onClick={() => setDateRange({ from: null, to: null })}
               className="text-[10px] font-bold text-rose-500 hover:text-rose-700 px-2 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
             >
               Reset
@@ -602,13 +552,13 @@ export default function FinancePage() {
         <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keuntungan Bersih</span>
-            <div className="p-1.5 md:p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+            <div className="p-1.5 md:p-2 bg-indigo-500/10 text-indigo-500 rounded-xl">
               <Wallet size={14} className="md:w-[18px] md:h-[18px]" />
             </div>
           </div>
           <div className="mt-2 md:mt-4">
             <h3 className="text-sm md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">{formatRupiah(netProfit)}</h3>
-            <p className="text-[9px] md:text-[10px] text-emerald-600 font-semibold mt-0.5 md:mt-1 flex items-center gap-1">
+            <p className="text-[9px] md:text-[10px] text-indigo-600 font-semibold mt-0.5 md:mt-1 flex items-center gap-1">
               <TrendingUp size={10} />
               {netProfit >= 0 ? 'Arus Kas Positif' : 'Arus Kas Negatif'}
             </p>
@@ -663,7 +613,7 @@ export default function FinancePage() {
                   {isFiltered ? `Filter aktif: ${dateFrom || '...'} s/d ${dateTo || '...'}` : 'Total laba bersih operasional sebelum dikurangi pengeluaran toko'}
                 </span>
               </div>
-              <div className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-xl shrink-0">
+              <div className="p-2.5 bg-indigo-500/10 text-indigo-500 rounded-xl shrink-0">
                 <TrendingUp size={20} />
               </div>
             </div>
@@ -677,7 +627,7 @@ export default function FinancePage() {
                   <span className="text-xs md:text-base font-extrabold text-zinc-900 dark:text-white block mt-1">{formatRupiah(filteredPosMargin)}</span>
                   <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5">Produk di kasir</span>
                 </div>
-                <div className="p-1.5 md:p-2 bg-emerald-500/10 text-emerald-500 rounded-lg shrink-0">
+                <div className="p-1.5 md:p-2 bg-indigo-500/10 text-indigo-500 rounded-lg shrink-0">
                   <ShoppingBag size={14} className="md:w-4 md:h-4" />
                 </div>
               </div>
@@ -703,26 +653,33 @@ export default function FinancePage() {
               <p className="text-xs text-slate-500">Log transaksi masuk dari kasir &amp; service selesai</p>
             </div>
             
-            {/* Active search filter indicator */}
-            {searchInvoiceTerm && (
-              <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-xl px-3 py-1 text-[10px] text-blue-700 dark:text-blue-300 font-semibold">
-                <span>Pencarian: "{searchInvoiceTerm}"</span>
-                <button
-                  onClick={() => {
-                    setSearchInvoiceTerm('');
-                    // Clean URL query param
-                    const newUrl = window.location.pathname;
-                    window.history.pushState({}, '', newUrl);
-                  }}
-                  className="hover:text-blue-900 dark:hover:text-blue-150 font-bold ml-1"
-                >
-                  ✕
-                </button>
+            <div className="flex items-center gap-2 flex-1 max-w-xs sm:justify-end w-full">
+              <div className="relative flex-1 w-full">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari no. invoice..."
+                  value={searchInvoiceTerm}
+                  onChange={(e) => setSearchInvoiceTerm(e.target.value)}
+                  className="w-full pl-9 pr-8 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 transition-colors"
+                />
+                {searchInvoiceTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchInvoiceTerm('');
+                      // Clean URL query param
+                      const newUrl = window.location.pathname;
+                      window.history.pushState({}, '', newUrl);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-650 dark:hover:text-zinc-200 font-bold cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <FileSpreadsheet size={16} className="text-emerald-500" />
+              <div className="p-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl shrink-0">
+                <FileSpreadsheet size={16} className="text-indigo-500" />
+              </div>
             </div>
           </div>
 
@@ -763,7 +720,7 @@ export default function FinancePage() {
                       <div className="flex flex-col items-end border-l border-slate-200 dark:border-zinc-800 pl-3">
                         <span className="text-[9px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">Keuntungan</span>
                         <span className={`text-xs font-extrabold ${
-                          isProfit ? 'text-emerald-500' : 'text-red-500'
+                          isProfit ? 'text-indigo-500' : 'text-red-500'
                         }`}>
                           {isProfit ? '+' : ''}{formatRupiah(inc.netMargin)}
                           <span className="text-[9px] font-semibold opacity-80 ml-1">
@@ -787,13 +744,15 @@ export default function FinancePage() {
                 <h3 className="font-bold text-slate-900 dark:text-zinc-50 text-sm sm:text-base">Buku Kas Pengeluaran</h3>
                 <p className="text-xs text-slate-500">Catat semua pengeluaran ruko & operasional Bangko</p>
               </div>
-              <button
-                onClick={() => setShowAddExpense(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
-              >
-                <Plus size={12} />
-                Catat
-              </button>
+              {role !== 'staff' && role !== 'viewer' && (
+                <button
+                  onClick={() => setShowAddExpense(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
+                >
+                  <Plus size={12} />
+                  Catat
+                </button>
+              )}
             </div>
 
             {/* Search Input for Expenses */}
@@ -804,7 +763,7 @@ export default function FinancePage() {
                 placeholder="Cari deskripsi pengeluaran..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-emerald-500 transition-colors"
+                className="w-full pl-9 pr-4 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
@@ -824,22 +783,24 @@ export default function FinancePage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-extrabold text-rose-600">-{formatRupiah(exp.amount)}</span>
-                      <div className="flex items-center gap-1.5 border-l border-slate-100 dark:border-zinc-800 pl-3">
-                        <button
-                          onClick={() => setEditingExpense(exp)}
-                          className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1"
-                          title="Edit Pengeluaran"
-                        >
-                          <Pencil size={12} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteExpense(exp.id)}
-                          className="text-rose-500 hover:text-rose-700 transition-colors p-1"
-                          title="Hapus Pengeluaran"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
+                      {role !== 'staff' && role !== 'viewer' && (
+                        <div className="flex items-center gap-1.5 border-l border-slate-100 dark:border-zinc-800 pl-3">
+                          <button
+                            onClick={() => setEditingExpense(exp)}
+                            className="text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1"
+                            title="Edit Pengeluaran"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteExpense(exp.id)}
+                            className="text-rose-500 hover:text-rose-700 transition-colors p-1"
+                            title="Hapus Pengeluaran"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -851,8 +812,8 @@ export default function FinancePage() {
 
       {/* Add/Edit Expense Modal Overlay */}
       {(showAddExpense || editingExpense) && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
                 {editingExpense ? 'Edit Pengeluaran' : 'Catat Pengeluaran Baru'}
@@ -928,15 +889,15 @@ export default function FinancePage() {
         </div>
       )}
 
-      {/* Detail Invoice Modal Overlay */}
+      {/* Detail Invoice / Nota Servis Modal Overlay */}
       {selectedIncome && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-zinc-100 transition-colors">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-zinc-100 transition-colors animate-modal-content">
             
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Detail Invoice
+                {selectedIncome.type === 'service' ? 'Detail Nota Servis' : 'Detail Invoice'}
               </h3>
               <button 
                 onClick={() => {
@@ -954,7 +915,7 @@ export default function FinancePage() {
             <div className="p-6 overflow-y-auto max-h-[75vh]">
               {loadingDetail ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <Loader2 className="animate-spin text-emerald-500" size={32} />
+                  <Loader2 className="animate-spin text-indigo-500" size={32} />
                   <p className="text-xs text-slate-500 font-medium">Memuat rincian transaksi...</p>
                 </div>
               ) : selectedIncome.type === 'pos' && posDetail ? (
@@ -966,62 +927,80 @@ export default function FinancePage() {
                       <h4 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Mitra Computer</h4>
                       <p className="text-xs text-slate-400 dark:text-zinc-500">Invoice Resmi Penjualan POS</p>
                     </div>
-                    <div className="text-left sm:text-right text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">No. Invoice:</span> {posDetail.invoice_number}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Nama Pembeli:</span> {posDetail.customer_name || 'Umum'}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">ID Transaksi:</span> {posDetail.id}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Tanggal & Jam:</span> {formatDateTime(posDetail.created_at)}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Kasir/Staff:</span> {posDetail.staff_name || 'Staff Toko'}</div>
+                    <div className="text-left sm:text-right text-xs sm:text-sm font-normal text-slate-500 dark:text-zinc-400 space-y-1">
+                      <div>
+                        No. Invoice: <span className="font-medium text-slate-800 dark:text-zinc-200">{posDetail.invoice_number}</span>
+                      </div>
+                      <div>
+                        Tanggal & Jam: <span className="font-medium text-slate-800 dark:text-zinc-200">{formatDateTime(posDetail.created_at)}</span>
+                      </div>
+                      <div>
+                        Nama Pembeli: <span className="font-medium text-slate-800 dark:text-zinc-200">{posDetail.customer_name || 'Umum'}</span>
+                      </div>
+                      <div>
+                        Kasir/Staff: <span className="font-medium text-slate-800 dark:text-zinc-200">{posDetail.staff_name || 'Staff Toko'}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Detail Item Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-slate-100 dark:border-zinc-800 text-slate-400 font-semibold">
-                          <th className="py-2.5">Nama Produk</th>
-                          <th className="py-2.5 text-center">Qty</th>
-                          <th className="py-2.5 text-right">Harga Jual</th>
-                          <th className="py-2.5 text-right hidden sm:table-cell">Harga Modal</th>
-                          <th className="py-2.5 text-right">Margin</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-850">
-                        {posDetail.items.map((item: any) => {
-                          const sell = item.price_at_sale;
-                          const cost = item.products?.cost_price || 0;
-                          const qty = item.quantity;
-                          const margin = (sell - cost) * qty;
-                          return (
-                            <tr key={item.id} className="text-slate-800 dark:text-zinc-300">
-                              <td className="py-3 font-medium max-w-[200px] truncate">{item.products?.name || 'Produk Custom / Non-Inventory'}</td>
-                              <td className="py-3 text-center font-bold">{qty}</td>
-                              <td className="py-3 text-right">{formatRupiah(sell)}</td>
-                              <td className="py-3 text-right text-slate-400 dark:text-zinc-550 hidden sm:table-cell">{formatRupiah(cost)}</td>
-                              <td className="py-3 text-right font-semibold text-emerald-600 dark:text-emerald-500">{formatRupiah(margin)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                  {/* Product Summary Card Container */}
+                  <div className="bg-slate-50 dark:bg-zinc-900/50 rounded-xl p-5 border border-slate-100/50 dark:border-zinc-800/50 space-y-4">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block mb-2">Item Terjual</span>
+                    <div className="divide-y divide-slate-100 dark:divide-zinc-800/60 space-y-3">
+                      {posDetail.items.map((item: any, idx: number) => {
+                        const name = item.products?.name || 'Produk Custom / Non-Inventory';
+                        const qty = item.quantity;
+                        const price = item.price_at_sale;
+                        return (
+                          <div key={item.id} className={`flex justify-between items-start gap-4 ${idx > 0 ? 'pt-3' : ''}`}>
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                              <span className="font-semibold text-slate-800 dark:text-zinc-100 text-xs sm:text-sm block truncate" title={name}>
+                                {name}
+                              </span>
+                              <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                                Qty: <span className="font-bold text-slate-650 dark:text-zinc-300">{qty}</span>
+                              </span>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-bold text-slate-800 dark:text-zinc-200 text-xs sm:text-sm">
+                                {formatRupiah(price)}
+                              </span>
+                              <span className="text-[9px] text-slate-400 dark:text-zinc-550 block mt-0.5">
+                                Total: {formatRupiah(price * qty)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  {/* Footer Invoice Summary */}
-                  <div className="bg-slate-50 dark:bg-zinc-950 p-4 rounded-xl border border-slate-100 dark:border-zinc-800 flex justify-between items-center gap-4">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">Total Omzet (Kotor)</span>
-                      <span className="text-base font-bold text-slate-700 dark:text-zinc-300">{formatRupiah(posDetail.total_amount)}</span>
+                  {/* Financial Cost Breakdown */}
+                  <div className="space-y-3">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">Rincian Biaya Keuangan</span>
+                    
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-500 dark:text-zinc-400 font-normal">Total Harga Jual (Gross):</span>
+                        <span className="font-semibold text-slate-700 dark:text-zinc-300">{formatRupiah(posDetail.total_amount)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-slate-500 dark:text-zinc-400 font-normal">Keuntungan Bersih Toko (Net Margin):</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-medium">{formatRupiah(
+                          posDetail.items.reduce((sum: number, item: any) => {
+                            const sell = item.price_at_sale;
+                            const cost = item.products?.cost_price || 0;
+                            return sum + (sell - cost) * item.quantity;
+                          }, 0)
+                        )}</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">Total Margin Keuntungan (Bersih)</span>
-                      <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-500">{formatRupiah(
-                        posDetail.items.reduce((sum: number, item: any) => {
-                          const sell = item.price_at_sale;
-                          const cost = item.products?.cost_price || 0;
-                          return sum + (sell - cost) * item.quantity;
-                        }, 0)
-                      )}</span>
+
+                    <div className="border-t-2 border-slate-100 dark:border-zinc-800/80 pt-3 flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-700 dark:text-zinc-300">Total Akhir (Dibayar Konsumen):</span>
+                      <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                        {formatRupiah(posDetail.total_amount)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1031,13 +1010,22 @@ export default function FinancePage() {
                   {/* Service Header */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-dashed border-slate-200 dark:border-zinc-800 pb-4 gap-4">
                     <div>
-                      <h4 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Mitra Computer</h4>
-                      <p className="text-xs text-slate-400 dark:text-zinc-500">Nota Service Selesai</p>
+                      <h4 className="text-lg font-bold text-slate-900 dark:text-white">Mitra Computer</h4>
+                      <p className="text-xs text-slate-500">Nota Service Selesai</p>
                     </div>
-                    <div className="text-left sm:text-right text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">ID Service:</span> {serviceDetail.id}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Selesai Pada:</span> {formatDateTime(serviceDetail.updated_at)}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Nama Pelanggan:</span> {serviceDetail.customer_name}</div>
+                    <div className="text-left sm:text-right text-xs sm:text-sm font-normal text-slate-600 dark:text-zinc-400 space-y-1">
+                      <div>
+                        ID Service: <span className="font-medium text-slate-800 dark:text-zinc-200">{serviceDetail.id}</span>
+                      </div>
+                      <div>
+                        Diterima Pada: <span className="font-medium text-slate-800 dark:text-zinc-200">{formatDateTime(serviceDetail.created_at)}</span>
+                      </div>
+                      <div>
+                        Selesai Pada: <span className="font-medium text-slate-800 dark:text-zinc-200">{formatDateTime(serviceDetail.updated_at)}</span>
+                      </div>
+                      <div>
+                        Nama Pelanggan: <span className="font-medium text-slate-800 dark:text-zinc-200">{serviceDetail.customer_name}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1064,7 +1052,7 @@ export default function FinancePage() {
                       </div>
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500 dark:text-zinc-450">Biaya Jasa Teknisi (Service Fee / Margin Bersih Toko):</span>
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-500">{formatRupiah(serviceDetail.service_cost || 0)}</span>
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-500">{formatRupiah(serviceDetail.service_cost || 0)}</span>
                       </div>
                     </div>
 
@@ -1083,15 +1071,17 @@ export default function FinancePage() {
               {/* Action Buttons: Cancel and Delete */}
               {!loadingDetail && (
                 <div className="flex flex-col sm:flex-row gap-3 justify-between items-center border-t border-slate-100 dark:border-zinc-800 pt-6 mt-6">
-                  <button 
-                    type="button" 
-                    disabled={deletingTx}
-                    onClick={handleDeleteTransaction}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={14} />
-                    {deletingTx ? 'Menghapus...' : 'Hapus Transaksi'}
-                  </button>
+                  {role !== 'manager' && role !== 'finance_staff' && role !== 'staff' && role !== 'viewer' && (
+                    <button 
+                      type="button" 
+                      disabled={deletingTx}
+                      onClick={handleDeleteTransaction}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={14} />
+                      {deletingTx ? 'Menghapus...' : 'Hapus Transaksi'}
+                    </button>
+                  )}
 
                   <button 
                     type="button" 
@@ -1115,7 +1105,7 @@ export default function FinancePage() {
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg animate-fade-in ${
           toast.type === 'success' 
-            ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' 
+            ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300' 
             : 'bg-rose-50 dark:bg-rose-950/80 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'
         }`}>
           {toast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}

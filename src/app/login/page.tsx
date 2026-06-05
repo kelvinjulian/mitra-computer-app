@@ -40,7 +40,7 @@ export default function LoginPage() {
         
         {/* Logo and Header */}
         <div className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-emerald-600/10">
+          <div className="mx-auto w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-600/20">
             <Laptop size={24} />
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
@@ -75,7 +75,7 @@ export default function LoginPage() {
                 placeholder="nama@mitracomputer.com"
                 required
                 disabled={loading}
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-xl text-xs outline-none focus:border-emerald-500 dark:focus:border-emerald-600 transition-all dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-600"
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-xl text-xs outline-none focus:border-indigo-500 dark:focus:border-indigo-600 transition-all dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-600"
               />
             </div>
           </div>
@@ -96,7 +96,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 required
                 disabled={loading}
-                className="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-xl text-xs outline-none focus:border-emerald-500 dark:focus:border-emerald-600 transition-all dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-600"
+                className="w-full pl-9 pr-10 py-2.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800/80 rounded-xl text-xs outline-none focus:border-indigo-500 dark:focus:border-indigo-600 transition-all dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-600"
               />
               <button
                 type="button"
@@ -113,7 +113,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/10 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
