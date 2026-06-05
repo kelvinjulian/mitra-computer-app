@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ShoppingCart, Package, Wrench, LogOut } from 'lucide-react';
 import { useAuth } from '@/components/shared/AuthProvider';
+import { useLanguage } from '@/components/shared/LanguageProvider';
 
 export default function MobileNavigation() {
   const pathname = usePathname();
   const { role, logout } = useAuth();
+  const { t } = useLanguage();
 
   if (role !== 'staff') return null;
 
@@ -34,7 +36,7 @@ export default function MobileNavigation() {
             }`}
           >
             <Icon size={20} className={isActive ? 'text-indigo-600 dark:text-indigo-400' : ''} />
-            <span className="text-[10px] tracking-tight">{item.name}</span>
+            <span className="text-[10px] tracking-tight">{t(item.name)}</span>
           </Link>
         );
       })}
@@ -44,7 +46,7 @@ export default function MobileNavigation() {
         className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-zinc-500 dark:text-zinc-400 hover:text-rose-650 dark:hover:text-rose-450 cursor-pointer"
       >
         <LogOut size={20} />
-        <span className="text-[10px] tracking-tight">Keluar</span>
+        <span className="text-[10px] tracking-tight">{t('Keluar')}</span>
       </button>
     </div>
   );

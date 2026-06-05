@@ -13,6 +13,7 @@ import {
   Users
 } from 'lucide-react';
 import { useAuth } from '@/components/shared/AuthProvider';
+import { useLanguage } from '@/components/shared/LanguageProvider';
 
 interface SidebarProps {
   className?: string;
@@ -21,6 +22,7 @@ interface SidebarProps {
 export default function Sidebar({ className = '' }: SidebarProps) {
   const pathname = usePathname();
   const { role, user, logout } = useAuth();
+  const { t } = useLanguage();
 
   const menuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -73,7 +75,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
                   isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
                 }`} 
               />
-              <span>{item.name}</span>
+              <span>{t(item.name)}</span>
             </Link>
           );
         })}
@@ -90,7 +92,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
               {user?.user_metadata?.name || user?.email || 'User'}
             </p>
             <p className="text-[10px] text-zinc-500 truncate capitalize">
-              {role === 'owner' ? 'Owner / Admin' : 'Staff Toko'}
+              {role === 'owner' ? t('Administrator') : t('Karyawan')}
             </p>
           </div>
         </div>
@@ -100,7 +102,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-medium text-zinc-500 hover:bg-zinc-150 dark:hover:bg-zinc-800/80 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 cursor-pointer"
         >
           <LogOut size={14} />
-          <span>Keluar Aplikasi</span>
+          <span>{t('Keluar')}</span>
         </button>
       </div>
     </aside>

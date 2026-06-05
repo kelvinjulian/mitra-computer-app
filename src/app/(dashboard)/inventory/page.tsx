@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import { useLanguage } from '@/components/shared/LanguageProvider';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function InventoryPage() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -211,7 +213,7 @@ export default function InventoryPage() {
             <Package size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Jenis</p>
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('Total Jenis')}</p>
             <h4 className="text-sm md:text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : `${products.length} Item`}
             </h4>
@@ -223,9 +225,9 @@ export default function InventoryPage() {
             <AlertTriangle size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Stok Tipis</p>
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('Stok Tipis')}</p>
             <h4 className="text-sm md:text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 truncate">
-              {loading ? '...' : `${lowStockCount} Barang`}
+              {loading ? '...' : `${lowStockCount} ${t('Barang')}`}
             </h4>
           </div>
         </div>
@@ -235,7 +237,7 @@ export default function InventoryPage() {
             <SlidersHorizontal size={14} className="md:w-[22px] md:h-[22px]" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Total Value Stok</p>
+            <p className="text-[9px] md:text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{t('Total Value Stok')}</p>
             <h4 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 dark:text-white mt-0.5 truncate">
               {loading ? '...' : formatRupiah(totalValueStok)}
             </h4>

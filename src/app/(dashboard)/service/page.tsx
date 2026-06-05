@@ -19,10 +19,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
+import { useLanguage } from '@/components/shared/LanguageProvider';
 
 type Service = Database['public']['Tables']['services']['Row'];
 
 export default function ServicePage() {
+  const { t } = useLanguage();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
