@@ -1,17 +1,79 @@
 # Mitra Computer - Internal POS & Service Management System
 
-An integrated internal shop management web application (Point of Sale, Inventory, Device Service Tracking, and Financial Cashbook) specifically designed to digitalize the daily operations of **Mitra Computer**. This application unifies all transactional workflows—from parts sales to hardware repair queues—and calculates real-time net profit analytics.
+An integrated, enterprise-grade internal shop management web application (Point of Sale, Inventory, Device Service Tracking, and Financial Cashbook) specifically designed to digitalize the daily operations of **Mitra Computer**. This application unifies all transactional workflows—from parts sales to hardware repair queues—and calculates real-time net profit analytics.
 
 ---
 
 ## ✨ Core Features
 
-- **📊 Dashboard Overview:** Real-time executive summary displaying daily revenue, active device service counts, automated low-stock inventory alerts, and monthly operating expense graphs.
-- **🛒 POS Cashier:** A responsive digital cashier system integrated with a Zustand-backed shopping cart. Every completed transaction automatically deducts inventory stock in real-time (*atomic updates*).
-- **📦 Inventory Management:** Tracking of stock coming in and out, calculated with cost prices, selling prices, and a minimum stock threshold alert system.
-- **🔧 Service Tracking (Repairs):** A progressive queue management system for customer hardware repairs (Laptops/Printers/PCs) with status transitions (*Queue -> Under Review -> Waiting for Parts -> Completed -> Cancelled*), equipped with labor and spare parts cost calculators.
-- **💼 Cashflow & Finance:** An automated general ledger that tracks revenue (POS Sales + Completed Service Repairs) and deducts recorded shop operating expenses to present real-time net profit data.
-- **🌗 Dual Theme Support:** Seamless integration of a minimalist dark mode inspired by the Supabase developer dashboard, alongside a clean light mode for long-duration operation comfort on the shop's laptops.
+### 📊 Dashboard Overview
+Real-time executive summary displaying daily revenue, active device service counts, automated low-stock inventory alerts, and monthly operating expense graphs. Accessible across all authenticated roles.
+
+### 🛒 POS Cashier
+A responsive digital cashier system integrated with a Zustand-backed shopping cart. Every completed transaction automatically deducts inventory stock in real-time (atomic updates).
+
+### 📦 Inventory Management
+Tracking of stock coming in and out, calculated with cost prices, selling prices, and a minimum stock threshold alert system.
+
+### 🔧 Service Tracking (Repairs)
+A progressive queue management system for customer hardware repairs (Laptops/Printers/PCs) with status transitions:
+
+`Queue → Under Review → Waiting for Parts → Completed → Cancelled`
+
+Equipped with labor/spare parts cost calculators and an integrated customer communication pathway.
+
+### 💼 Cashflow & Finance
+An automated general ledger that tracks revenue (POS Sales + Completed Service Repairs) and deducts recorded shop operating expenses to present real-time net profit data.
+
+### 🔐 5-Tier Role-Based Access Control (RBAC)
+Advanced multi-user authorization matrix that strictly boundaries views and CRUD actions based on operational employee duties.
+
+### 🌗 Dual Theme Support
+Seamless integration of a minimalist dark mode inspired by the Supabase developer dashboard, alongside a clean light mode for long-duration operation comfort on the shop's laptops.
+
+---
+
+## 🔒 Security & Access Control (RBAC Matrix)
+
+The application enforces a granular authorization layer to ensure data integrity and prevent unauthorized operations across the shop's workflows.
+
+### Owner (Principal Owner)
+- Absolute control over the ecosystem.
+- Full CRUD across all modules.
+- Employee account provisioning.
+- Access to permanent immutable audit logs.
+
+### Manager (Store Manager)
+- Full operational access (CRUD on POS, Inventory, and Service Tracking).
+- View-only permissions for financial analytical reports.
+- Blocked from Staff Management and Audit Logs.
+
+### Finance Staff
+- Full CRUD over financial ledger operations and shop expenses.
+- Read-only access to Inventory and Services for transaction verification.
+- Blocked from structural management panels.
+
+### Staff (Cashier / Technician)
+- Full operational access to checkout POS transactions.
+- Initial hardware service intake management.
+- Strictly read-only access to Finance dashboards.
+- Cannot add, edit, or delete expense entries.
+
+### Viewer (Passive Auditor)
+- 100% Read-Only mode across the entire application.
+- Suitable for investors or independent accountants.
+- All mutation triggers, structural action buttons, and external contact portals (such as WhatsApp redirection) are completely removed from the UI.
+
+---
+
+## 🧪 Demo Accounts Credentials
+
+For testing or staging review purposes, you can log into the environment using the pre-configured accounts below.
+
+| Target Testing Role | Email Address | Password | Access Scope |
+|---------------------|--------------|----------|--------------|
+| Owner Account | kelvin@mitra.com | juliankelvin871 | Super-Admin / Unrestricted |
+| Auditor / Guest (New) | Viewer@mitra.com | Viewer@1234 | Strictly Read-Only (Passive) |
 
 ---
 
@@ -28,8 +90,9 @@ An integrated internal shop management web application (Point of Sale, Inventory
 ### Backend & Database (BaaS)
 
 - **Database:** Supabase (PostgreSQL Cloud Instance)
+- **Authentication:** Supabase Auth (Enforcing JWT server-side session guards via `createServerComponentClient`)
 - **Connectivity:** `@supabase/supabase-js` (Autogenerated Data API Client)
-- **Data Mutation:** Direct CRUD operations via Supabase Client utilizing Client-Side & Server-Side Data Fetching
+- **Data Mutation:** Structured CRUD operations utilizing Client-Side lifecycle guards and Server-Side data validation to prevent race conditions during session termination.
 
 ---
 
@@ -39,8 +102,8 @@ An integrated internal shop management web application (Point of Sale, Inventory
 
 Make sure you have the following installed on your machine:
 
-- [Node.js](https://nodejs.org/) (Version 18 or newer)
-- Package manager (`npm` or `yarn`)
+- Node.js (Version 18 or newer)
+- npm or yarn
 
 ### 2. Clone the Repository
 
@@ -57,23 +120,39 @@ npm install
 
 ### 4. Environment Variables Configuration
 
-Create a new file named `.env.local` in the root directory of the project and add your Supabase API credentials (you can refer to `.env.example`):
+Create a new file named `.env.local` in the root directory of the project and add your Supabase API credentials (refer to `.env.example` for the baseline blueprint):
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-publishable-key
 ```
 
-### 5. Run the Development Server
+> ⚠️ **Security Note:** High-privilege keys such as `SUPABASE_SERVICE_ROLE_KEY` must strictly remain on server-side actions and must never be exposed with a `NEXT_PUBLIC_` prefix to prevent browser-side leakage.
+
+### 5. Build and Run the Development Server
+
+To verify local health and check for code compilation or strict type safety breaks, run a production build first:
+
+```bash
+npm run build
+```
+
+To spin up the local development runtime environment:
 
 ```bash
 npm run dev
 ```
 
-Open your browser and navigate to [http://localhost:3000](http://localhost:3000).
+Open your browser and navigate to:
+
+```text
+http://localhost:3000
+```
 
 ---
 
 ## 🔒 License
 
-Copyright © 2026 Mitra Computer. Developed independently for internal business digitalization requirements.
+Copyright © 2026 Mitra Computer.
+
+Developed independently for internal business digitalization requirements. All rights reserved.
