@@ -53,7 +53,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     if (segments.length === 0) return t('Beranda');
     const rawTitle = segments[segments.length - 1];
     switch (rawTitle) {
-      case 'dashboard': return 'Dashboard'; // Keep "Dashboard" unchanged
+      case 'dashboard': return 'Dashboard';
       case 'kasir': return t('POS Kasir');
       case 'inventory': return t('Inventory Stok');
       case 'service': return t('Pelacakan Service');
@@ -71,15 +71,15 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">
       {/* Page Breadcrumbs */}
       <div className="flex items-center gap-2">
-        {(role === 'owner' || role === 'manager') && (
-          <button
-            onClick={onMenuClick}
-            className="p-2 md:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
-            title="Menu Utama"
-          >
-            <Menu size={18} />
-          </button>
-        )}
+        {/* ✅ HAMBURGER MENU - RENDER UNTUK SEMUA ROLE */}
+        <button
+          onClick={onMenuClick}
+          className="p-2 md:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
+          title="Menu Utama"
+        >
+          <Menu size={18} />
+        </button>
+
         <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 hidden md:inline">Mitra Computer</span>
         <ChevronRight size={12} className="text-zinc-300 dark:text-zinc-700 hidden md:inline" />
         <span className="text-sm md:text-base font-semibold text-zinc-800 dark:text-zinc-100 max-w-[180px] md:max-w-none truncate" title={getPageTitle()}>
