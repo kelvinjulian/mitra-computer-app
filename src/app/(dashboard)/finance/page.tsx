@@ -274,7 +274,7 @@ export default function FinancePage() {
       // 2. Ambil data service yang selesai (selesai)
       const { data: svcs, error: svcsErr } = await supabase
         .from('services')
-        .select('id, device_name, customer_name, service_cost, part_cost, created_at')
+        .select('id, device_name, customer_name, service_cost, part_cost, created_at, updated_at')
         .eq('status', 'selesai');
       if (svcsErr) throw svcsErr;
 
@@ -333,7 +333,7 @@ export default function FinancePage() {
         id: s.id,
         source: `Service - ${s.device_name} (${s.customer_name})`,
         amount: (s.service_cost || 0) + (s.part_cost || 0),
-        date: new Date(s.created_at).toISOString().split('T')[0],
+        date: new Date(s.updated_at).toISOString().split('T')[0],
         type: 'service' as const,
         netMargin: s.service_cost || 0,  // margin bersih service = biaya jasa teknisi
         customerName: s.customer_name

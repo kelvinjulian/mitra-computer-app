@@ -110,10 +110,10 @@ export async function GET(req: NextRequest) {
     // C. Completed services
     const { data: svcs, error: svcsErr } = await supabase
       .from('services')
-      .select('id, service_cost, part_cost, created_at')
+      .select('id, service_cost, part_cost, updated_at')
       .eq('status', 'selesai')
-      .gte('created_at', fromISO)
-      .lte('created_at', toISO);
+      .gte('updated_at', fromISO)
+      .lte('updated_at', toISO);
     if (svcsErr) throw svcsErr;
 
     // D. Expenditures / Expenses
@@ -204,11 +204,11 @@ export async function GET(req: NextRequest) {
     (svcs || []).forEach((s) => {
       let key = '';
       if (granularity === 'hari') {
-        key = getLocalDateStrFromISO(s.created_at);
+        key = getLocalDateStrFromISO(s.updated_at);
       } else if (granularity === 'bulan') {
-        key = getLocalMonthStrFromISO(s.created_at);
+        key = getLocalMonthStrFromISO(s.updated_at);
       } else {
-        key = getLocalYearStrFromISO(s.created_at);
+        key = getLocalYearStrFromISO(s.updated_at);
       }
 
       if (buckets[key]) {
