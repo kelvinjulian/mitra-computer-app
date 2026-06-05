@@ -249,7 +249,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Interactive Sales Chart */}
-      <SalesChart todayRevenue={todayRevenue} />
+      <SalesChart dateRange={dateRange} />
 
       {/* Main Grid Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

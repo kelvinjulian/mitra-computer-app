@@ -14,11 +14,13 @@ import {
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
 import { useLanguage } from '@/components/shared/LanguageProvider';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function InventoryPage() {
   const { t } = useLanguage();
+  const { role } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -275,15 +277,17 @@ export default function InventoryPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 items-start md:items-auto self-start md:self-auto">
-            <button
-              onClick={handleCleanGhostProducts}
-              disabled={cleaning}
-              title="Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)"
-              className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
-            >
-              {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-              {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
-            </button>
+            {role !== 'manager' && (
+              <button
+                onClick={handleCleanGhostProducts}
+                disabled={cleaning}
+                title="Hapus semua produk berstok 0 (produk hantu hasil Custom Item lama)"
+                className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
+              >
+                {cleaning ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
+              </button>
+            )}
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
@@ -399,8 +403,8 @@ export default function InventoryPage() {
 
       {/* Add Product Modal Overlay */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-fade-in">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Tambah Produk Baru</h3>
               <button 
@@ -504,8 +508,8 @@ export default function InventoryPage() {
 
       {/* Edit Product Modal Overlay */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-fade-in">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">Edit Produk</h3>
               <button 

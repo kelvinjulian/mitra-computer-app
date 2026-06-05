@@ -69,10 +69,11 @@ export async function GET(req: NextRequest) {
       .filter((u: any) => u.role === 'staff')
       .map((u: any) => {
         const authUser = authUsers.find((au) => au.id === u.id);
+        const actualRole = authUser?.app_metadata?.role || authUser?.user_metadata?.role || u.role;
         return {
           id: u.id,
           name: u.name,
-          role: u.role,
+          role: actualRole,
           email: authUser?.email || 'N/A',
           created_at: u.created_at
         };
@@ -94,11 +95,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { email, password, name } = body;
+    const { email, password, name, role } = body;
 
     if (!email || !password || !name) {
       return NextResponse.json({ error: 'Email, password, and name are required.' }, { status: 400 });
     }
+
+    const finalRole = (role === 'manager' || role === 'staff') ? role : 'staff';
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
@@ -111,8 +114,8 @@ export async function POST(req: NextRequest) {
     const { data: authUser, error: authErr } = await adminClient.auth.admin.createUser({
       email,
       password,
-      user_metadata: { role: 'staff', name },
-      app_metadata: { role: 'staff' },
+      user_metadata: { role: finalRole, name },
+      app_metadata: { role: finalRole },
       email_confirm: true
     });
 

@@ -23,6 +23,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
 import DateRangePicker, { DateRange } from '@/components/shared/DateRangePicker';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type Expense = Database['public']['Tables']['expenses']['Row'];
 interface MappedIncome {
@@ -36,6 +37,7 @@ interface MappedIncome {
 }
 
 export default function FinancePage() {
+  const { role } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<MappedIncome[]>([]);
   const [loading, setLoading] = useState(true);
@@ -789,8 +791,8 @@ export default function FinancePage() {
 
       {/* Add/Edit Expense Modal Overlay */}
       {(showAddExpense || editingExpense) && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
                 {editingExpense ? 'Edit Pengeluaran' : 'Catat Pengeluaran Baru'}
@@ -866,15 +868,15 @@ export default function FinancePage() {
         </div>
       )}
 
-      {/* Detail Invoice Modal Overlay */}
+      {/* Detail Invoice / Nota Servis Modal Overlay */}
       {selectedIncome && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-zinc-100 transition-colors">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-2xl w-full border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden text-slate-900 dark:text-zinc-100 transition-colors animate-modal-content">
             
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Detail Invoice
+                {selectedIncome.type === 'service' ? 'Detail Nota Servis' : 'Detail Invoice'}
               </h3>
               <button 
                 onClick={() => {
@@ -969,13 +971,22 @@ export default function FinancePage() {
                   {/* Service Header */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-dashed border-slate-200 dark:border-zinc-800 pb-4 gap-4">
                     <div>
-                      <h4 className="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Mitra Computer</h4>
-                      <p className="text-xs text-slate-400 dark:text-zinc-500">Nota Service Selesai</p>
+                      <h4 className="text-lg font-bold text-slate-900 dark:text-white">Mitra Computer</h4>
+                      <p className="text-xs text-slate-500">Nota Service Selesai</p>
                     </div>
-                    <div className="text-left sm:text-right text-[11px] text-slate-500 dark:text-zinc-400 space-y-1">
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">ID Service:</span> {serviceDetail.id}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Selesai Pada:</span> {formatDateTime(serviceDetail.updated_at)}</div>
-                      <div><span className="font-semibold text-slate-700 dark:text-zinc-300">Nama Pelanggan:</span> {serviceDetail.customer_name}</div>
+                    <div className="text-left sm:text-right text-xs sm:text-sm font-normal text-slate-600 dark:text-zinc-400 space-y-1">
+                      <div>
+                        ID Service: <span className="font-medium text-slate-800 dark:text-zinc-200">{serviceDetail.id}</span>
+                      </div>
+                      <div>
+                        Diterima Pada: <span className="font-medium text-slate-800 dark:text-zinc-200">{formatDateTime(serviceDetail.created_at)}</span>
+                      </div>
+                      <div>
+                        Selesai Pada: <span className="font-medium text-slate-800 dark:text-zinc-200">{formatDateTime(serviceDetail.updated_at)}</span>
+                      </div>
+                      <div>
+                        Nama Pelanggan: <span className="font-medium text-slate-800 dark:text-zinc-200">{serviceDetail.customer_name}</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1021,15 +1032,17 @@ export default function FinancePage() {
               {/* Action Buttons: Cancel and Delete */}
               {!loadingDetail && (
                 <div className="flex flex-col sm:flex-row gap-3 justify-between items-center border-t border-slate-100 dark:border-zinc-800 pt-6 mt-6">
-                  <button 
-                    type="button" 
-                    disabled={deletingTx}
-                    onClick={handleDeleteTransaction}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-2"
-                  >
-                    <Trash2 size={14} />
-                    {deletingTx ? 'Menghapus...' : 'Hapus Transaksi'}
-                  </button>
+                  {role !== 'manager' && (
+                    <button 
+                      type="button" 
+                      disabled={deletingTx}
+                      onClick={handleDeleteTransaction}
+                      className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={14} />
+                      {deletingTx ? 'Menghapus...' : 'Hapus Transaksi'}
+                    </button>
+                  )}
 
                   <button 
                     type="button" 

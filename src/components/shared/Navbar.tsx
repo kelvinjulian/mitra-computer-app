@@ -70,14 +70,14 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   };
 
   // Avatar initials & label
-  const avatarInitials = role === 'owner' ? 'OW' : 'ST';
-  const roleLabel = role === 'owner' ? t('Administrator') : t('Karyawan');
+  const avatarInitials = role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : 'ST';
+  const roleLabel = role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : t('Karyawan');
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">
       {/* Page Breadcrumbs */}
       <div className="flex items-center gap-2">
-        {role === 'owner' && (
+        {(role === 'owner' || role === 'manager') && (
           <button
             onClick={onMenuClick}
             className="p-2 md:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
@@ -127,7 +127,7 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
           {/* Dropdown Panel */}
           {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/80 overflow-hidden z-50 animate-fade-in">
+            <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-zinc-950/80 overflow-hidden z-50 animate-popover-fade-in">
               {/* Header */}
               <div className="px-4 py-3.5 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">

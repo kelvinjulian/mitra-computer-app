@@ -249,7 +249,7 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
 
       {/* Floating Popover */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl shadow-slate-200/60 dark:shadow-zinc-900/80 overflow-hidden animate-fade-in min-w-max">
+        <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-2xl shadow-slate-200/60 dark:shadow-zinc-900/80 overflow-hidden animate-popover-fade-in min-w-max">
           <div className="flex">
             {/* Left Sidebar: Presets */}
             <div className="border-r border-slate-100 dark:border-zinc-800 p-4 flex flex-col gap-1 min-w-[140px]">

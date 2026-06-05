@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/components/shared/AuthProvider';
 import { 
   Users, 
   Plus, 
@@ -28,6 +29,7 @@ interface StaffUser {
 }
 
 export default function StaffManagementPage() {
+  const { role } = useAuth();
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -84,13 +86,14 @@ export default function StaffManagementPage() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const name = formData.get('name') as string;
+    const staffRole = formData.get('role') as string;
 
     try {
       const headers = await getHeaders();
       const res = await fetch('/api/admin/staff', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ email, password, name })
+        body: JSON.stringify({ email, password, name, role: staffRole })
       });
       const json = await res.json();
 
@@ -176,13 +179,15 @@ export default function StaffManagementPage() {
           <h2 className="text-lg font-bold tracking-tight">Manajemen Akses Pegawai</h2>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Daftarkan akun kasir staff baru, kelola sandi login, atau cabut hak akses sistem.</p>
         </div>
-        <button
-          onClick={() => { setShowAddModal(true); setShowPassword(false); }}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 min-h-[44px] rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/10 flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer"
-        >
-          <Plus size={14} />
-          Daftarkan Staff Baru
-        </button>
+        {role === 'owner' && (
+          <button
+            onClick={() => { setShowAddModal(true); setShowPassword(false); }}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 min-h-[44px] rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/10 flex items-center gap-1.5 transition-all self-start sm:self-auto cursor-pointer"
+          >
+            <Plus size={14} />
+            Daftarkan Staff Baru
+          </button>
+        )}
       </div>
 
       {/* Database Error Alert */}
@@ -220,7 +225,7 @@ export default function StaffManagementPage() {
                   <th className="py-3.5 px-6 hidden sm:table-cell">Alamat Email</th>
                   <th className="py-3.5 px-6">Peran Akses</th>
                   <th className="py-3.5 px-6 hidden md:table-cell">Tanggal Terdaftar</th>
-                  <th className="py-3.5 px-6 text-right">Aksi</th>
+                  {role === 'owner' && <th className="py-3.5 px-6 text-right">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -239,24 +244,26 @@ export default function StaffManagementPage() {
                         {formatDate(staff.created_at)}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-right space-x-2">
-                      <button
-                        onClick={() => { setShowResetModal(staff); setShowResetPassword(false); }}
-                        className="py-2.5 px-3 text-slate-555 hover:text-indigo-655 dark:text-zinc-450 dark:hover:text-indigo-400 bg-slate-50 hover:bg-indigo-500/10 dark:bg-zinc-950 dark:hover:bg-indigo-950/30 rounded-xl transition-all inline-flex items-center gap-1 font-semibold text-[10px] cursor-pointer"
-                        title="Reset Kata Sandi"
-                      >
-                        <KeyRound size={12} />
-                        Sandi
-                      </button>
-                      <button
-                        onClick={() => handleDeleteStaff(staff)}
-                        className="py-2.5 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all inline-flex items-center gap-1 font-semibold text-[10px] cursor-pointer"
-                        title="Cabut Hak Akses"
-                      >
-                        <Trash2 size={12} />
-                        Hapus
-                      </button>
-                    </td>
+                    {role === 'owner' && (
+                      <td className="py-4 px-6 text-right space-x-2">
+                        <button
+                          onClick={() => { setShowResetModal(staff); setShowResetPassword(false); }}
+                          className="py-2.5 px-3 text-slate-555 hover:text-indigo-655 dark:text-zinc-450 dark:hover:text-indigo-400 bg-slate-50 hover:bg-indigo-500/10 dark:bg-zinc-950 dark:hover:bg-indigo-950/30 rounded-xl transition-all inline-flex items-center gap-1 font-semibold text-[10px] cursor-pointer"
+                          title="Reset Kata Sandi"
+                        >
+                          <KeyRound size={12} />
+                          Sandi
+                        </button>
+                        <button
+                          onClick={() => handleDeleteStaff(staff)}
+                          className="py-2.5 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all inline-flex items-center gap-1 font-semibold text-[10px] cursor-pointer"
+                          title="Cabut Hak Akses"
+                        >
+                          <Trash2 size={12} />
+                          Hapus
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -267,8 +274,8 @@ export default function StaffManagementPage() {
 
       {/* Add Staff Modal Overlay */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-sm sm:text-base">Daftarkan Akun Staff Baru</h3>
               <button 
@@ -330,11 +337,23 @@ export default function StaffManagementPage() {
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Peran Akses</label>
+                <select 
+                  name="role" 
+                  required 
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 cursor-pointer"
+                >
+                  <option value="staff">Staff (Kasir)</option>
+                  <option value="manager">Manager (Supervisor)</option>
+                </select>
+              </div>
+
               <div className="flex gap-3 justify-end pt-4">
                 <button 
                   type="button" 
                   onClick={() => { setShowAddModal(false); setShowPassword(false); }} 
-                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-550 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
+                  className="px-4 py-2 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-555 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
                 >
                   Batal
                 </button>
@@ -354,8 +373,8 @@ export default function StaffManagementPage() {
 
       {/* Reset Password Modal Overlay */}
       {showResetModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4 animate-modal-backdrop">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800/80 shadow-2xl overflow-hidden animate-modal-content">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h3 className="font-bold text-sm sm:text-base">Reset Sandi - {showResetModal.name}</h3>
               <button 
