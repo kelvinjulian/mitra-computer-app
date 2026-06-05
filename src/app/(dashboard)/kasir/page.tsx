@@ -19,11 +19,13 @@ import {
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
 import { useLanguage } from '@/components/shared/LanguageProvider';
+import { useAuth } from '@/components/shared/AuthProvider';
 
 type DbProduct = Database['public']['Tables']['products']['Row'];
 
 export default function KasirPage() {
   const { t } = useLanguage();
+  const { role } = useAuth();
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotalAmount } = useCartStore();
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,10 @@ export default function KasirPage() {
     try {
       setLoading(true);
       setError(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
       const { data, error: fetchErr } = await supabase
         .from('products')
         .select('*')
@@ -91,6 +97,10 @@ export default function KasirPage() {
 
   const handleCustomItemSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (role === 'viewer') {
+      alert('Akses ditolak: Viewer tidak memiliki wewenang untuk menambahkan custom item.');
+      return;
+    }
     const formData = new FormData(e.currentTarget);
     const name = formData.get('customName') as string;
     const sellingPrice = parseInt(formData.get('customSellingPrice') as string, 10);
@@ -118,6 +128,10 @@ export default function KasirPage() {
 
   const handleCheckout = async () => {
     if (items.length === 0 || checkingOut) return;
+    if (role === 'viewer') {
+      alert('Akses ditolak: Viewer tidak memiliki wewenang untuk melakukan checkout.');
+      return;
+    }
     setCheckingOut(true);
     setError(null);
     try {
@@ -303,13 +317,15 @@ export default function KasirPage() {
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm outline-none focus:border-indigo-500 dark:focus:border-indigo-600 transition-colors"
             />
           </div>
-          <button
-            onClick={() => setShowCustomModal(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-indigo-600/10 min-h-[38px]"
-          >
-            <Plus size={14} />
-            {t("Custom Item")}
-          </button>
+          {role !== 'viewer' && (
+            <button
+              onClick={() => setShowCustomModal(true)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-md shadow-indigo-600/10 min-h-[38px]"
+            >
+              <Plus size={14} />
+              {t("Custom Item")}
+            </button>
+          )}
         </div>
 
         {/* Category filters */}
@@ -386,7 +402,7 @@ export default function KasirPage() {
                         {formatRupiah(product.selling_price)}
                       </span>
                       <button
-                        disabled={remainingStock === 0}
+                        disabled={remainingStock === 0 || role === 'viewer'}
                         onClick={() => addItem({
                           productId: product.id,
                           name: product.name,
@@ -394,8 +410,8 @@ export default function KasirPage() {
                           stock: product.stock
                         })}
                         className={`p-2 rounded-lg transition-all duration-200 ${
-                          remainingStock === 0
-                            ? 'bg-slate-100 text-slate-350 dark:bg-zinc-950 dark:text-slate-650 cursor-not-allowed'
+                          (remainingStock === 0 || role === 'viewer')
+                            ? 'bg-slate-100 text-slate-355 dark:bg-zinc-950 dark:text-slate-650 cursor-not-allowed'
                             : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm hover:scale-105 active:scale-95'
                         }`}
                       >
@@ -439,22 +455,25 @@ export default function KasirPage() {
                 </div>
                 <div className="flex flex-col items-end justify-between gap-2">
                   <button 
-                    onClick={() => removeItem(item.productId)}
-                    className="text-slate-400 hover:text-rose-500 transition-colors"
+                    disabled={role === 'viewer'}
+                    onClick={() => { if (role !== 'viewer') removeItem(item.productId); }}
+                    className="text-slate-400 hover:text-rose-500 transition-colors disabled:opacity-50"
                   >
                     <Trash2 size={12} />
                   </button>
                   <div className="flex items-center gap-2 border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-950 px-1 py-0.5">
                     <button 
-                      onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      className="p-0.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded"
+                      disabled={role === 'viewer'}
+                      onClick={() => { if (role !== 'viewer') updateQuantity(item.productId, item.quantity - 1); }}
+                      className="p-0.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50"
                     >
                       <Minus size={10} />
                     </button>
-                    <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 w-4 text-center">{item.quantity}</span>
+                    <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-200 w-4 text-center">{item.quantity}</span>
                     <button 
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      className="p-0.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded"
+                      disabled={role === 'viewer'}
+                      onClick={() => { if (role !== 'viewer') updateQuantity(item.productId, item.quantity + 1); }}
+                      className="p-0.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50"
                     >
                       <Plus size={10} />
                     </button>
@@ -473,10 +492,11 @@ export default function KasirPage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('Nama Pembeli')}</span>
               <input
                 type="text"
+                disabled={role === 'viewer'}
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder={t("Contoh: Ahmad (Kosongkan jika Umum)")}
-                className="w-full mt-1.5 px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="w-full mt-1.5 px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500 disabled:opacity-50"
               />
             </div>
 
@@ -485,8 +505,9 @@ export default function KasirPage() {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('Metode Pembayaran')}</span>
               <div className="grid grid-cols-2 gap-2 mt-1.5">
                 <button
-                  onClick={() => setPaymentMethod('cash')}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                  disabled={role === 'viewer'}
+                  onClick={() => { if (role !== 'viewer') setPaymentMethod('cash'); }}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 disabled:opacity-50 cursor-pointer ${
                     paymentMethod === 'cash'
                       ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                       : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
@@ -496,8 +517,9 @@ export default function KasirPage() {
                   Cash
                 </button>
                 <button
-                  onClick={() => setPaymentMethod('transfer')}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                  disabled={role === 'viewer'}
+                  onClick={() => { if (role !== 'viewer') setPaymentMethod('transfer'); }}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 disabled:opacity-50 cursor-pointer ${
                     paymentMethod === 'transfer'
                       ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                       : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
@@ -515,13 +537,14 @@ export default function KasirPage() {
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{t('Uang Diterima (Cash)')}</span>
                 <input
                   type="text"
+                  disabled={role === 'viewer'}
                   value={cashReceived === '' ? '' : cashReceived}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[^0-9]/g, '');
                     setCashReceived(val === '' ? '' : parseInt(val, 10));
                   }}
                   placeholder="Contoh: 50000"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500 disabled:opacity-50"
                 />
                 {cashReceived !== '' && cashReceived < getTotalAmount() && (
                   <p className="text-[10px] text-rose-500 font-semibold">{t('Uang diterima kurang dari total tagihan!')}</p>
@@ -543,7 +566,7 @@ export default function KasirPage() {
 
             {/* Checkout Action */}
             <button
-              disabled={checkingOut || (paymentMethod === 'cash' && cashReceived !== '' && cashReceived < getTotalAmount())}
+              disabled={checkingOut || role === 'viewer' || (paymentMethod === 'cash' && cashReceived !== '' && cashReceived < getTotalAmount())}
               onClick={handleCheckout}
               className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white min-h-[44px] rounded-xl text-xs font-bold transition-all duration-200 shadow-md shadow-indigo-600/10 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
@@ -604,22 +627,25 @@ export default function KasirPage() {
                     </div>
                     <div className="flex flex-col items-end justify-between gap-2">
                       <button 
-                        onClick={() => removeItem(item.productId)}
-                        className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                        disabled={role === 'viewer'}
+                        onClick={() => { if (role !== 'viewer') removeItem(item.productId); }}
+                        className="text-slate-400 hover:text-rose-500 transition-colors p-1 disabled:opacity-50"
                       >
                         <Trash2 size={12} />
                       </button>
                       <div className="flex items-center gap-2 border border-slate-200 dark:border-zinc-800 rounded-md bg-white dark:bg-zinc-950 px-1 py-0.5">
                         <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded"
+                          disabled={role === 'viewer'}
+                          onClick={() => { if (role !== 'viewer') updateQuantity(item.productId, item.quantity - 1); }}
+                          className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50"
                         >
                           <Minus size={10} />
                         </button>
-                        <span className="text-[10px] font-bold text-slate-800 dark:text-slate-200 w-4 text-center">{item.quantity}</span>
+                        <span className="text-[10px] font-bold text-slate-800 dark:text-zinc-200 w-4 text-center">{item.quantity}</span>
                         <button 
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded"
+                          disabled={role === 'viewer'}
+                          onClick={() => { if (role !== 'viewer') updateQuantity(item.productId, item.quantity + 1); }}
+                          className="p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded disabled:opacity-50"
                         >
                           <Plus size={10} />
                         </button>
@@ -638,10 +664,11 @@ export default function KasirPage() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Nama Pembeli</span>
                   <input
                     type="text"
+                    disabled={role === 'viewer'}
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder="Contoh: Ahmad (Kosongkan jika Umum)"
-                    className="w-full mt-1.5 px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                    className="w-full mt-1.5 px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500 disabled:opacity-50"
                   />
                 </div>
 
@@ -651,8 +678,9 @@ export default function KasirPage() {
                   <div className="grid grid-cols-2 gap-2 mt-1.5">
                     <button
                       type="button"
-                      onClick={() => setPaymentMethod('cash')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                      disabled={role === 'viewer'}
+                      onClick={() => { if (role !== 'viewer') setPaymentMethod('cash'); }}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 disabled:opacity-50 cursor-pointer ${
                         paymentMethod === 'cash'
                           ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                           : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
@@ -663,8 +691,9 @@ export default function KasirPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPaymentMethod('transfer')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                      disabled={role === 'viewer'}
+                      onClick={() => { if (role !== 'viewer') setPaymentMethod('transfer'); }}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border text-xs font-semibold transition-all duration-200 disabled:opacity-50 cursor-pointer ${
                         paymentMethod === 'transfer'
                           ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                           : 'border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-950 text-slate-500'
@@ -682,13 +711,14 @@ export default function KasirPage() {
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Uang Diterima (Cash)</span>
                     <input
                       type="text"
+                      disabled={role === 'viewer'}
                       value={cashReceived === '' ? '' : cashReceived}
                       onChange={(e) => {
                         const val = e.target.value.replace(/[^0-9]/g, '');
                         setCashReceived(val === '' ? '' : parseInt(val, 10));
                       }}
                       placeholder="Contoh: 50000"
-                      className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 dark:placeholder:text-zinc-500 disabled:opacity-50"
                     />
                     {cashReceived !== '' && cashReceived < getTotalAmount() && (
                       <p className="text-[10px] text-rose-500 font-semibold">Uang diterima kurang dari total tagihan!</p>
@@ -711,7 +741,7 @@ export default function KasirPage() {
                 {/* Checkout Action */}
                 <button
                   type="button"
-                  disabled={checkingOut || (paymentMethod === 'cash' && cashReceived !== '' && cashReceived < getTotalAmount())}
+                  disabled={checkingOut || role === 'viewer' || (paymentMethod === 'cash' && cashReceived !== '' && cashReceived < getTotalAmount())}
                   onClick={async () => {
                     await handleCheckout();
                     setShowMobileCart(false);

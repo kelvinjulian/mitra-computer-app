@@ -62,6 +62,10 @@ export default function ServicePage() {
     try {
       setLoading(true);
       setError(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
       const { data, error: fetchErr } = await supabase
         .from('services')
         .select('*')
@@ -109,6 +113,7 @@ export default function ServicePage() {
 
   const handleAddService = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (role === 'viewer') return;
     setSubmitting(true);
     setError(null);
 
@@ -148,7 +153,7 @@ export default function ServicePage() {
 
   const handleUpdateService = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedService || updating) return;
+    if (role === 'viewer' || !selectedService || updating) return;
     setUpdating(true);
 
     try {
@@ -185,6 +190,7 @@ export default function ServicePage() {
   };
 
   const handleDeleteService = async (id: string) => {
+    if (role === 'viewer') return;
     if (!window.confirm("Apakah Anda yakin ingin menghapus data service ini?")) return;
     try {
       const { error: deleteErr } = await supabase
@@ -237,7 +243,7 @@ export default function ServicePage() {
             </select>
           </div>
 
-          {role !== 'finance_staff' && (
+          {role !== 'finance_staff' && role !== 'viewer' && (
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5 self-start sm:self-auto"
@@ -349,7 +355,7 @@ export default function ServicePage() {
                     </span>
                   </div>
                 </div>
-                {role !== 'finance_staff' && (
+                {role !== 'finance_staff' && role !== 'viewer' && (
                   <button 
                     type="button"
                     onClick={() => handleDeleteService(selectedService.id)}
@@ -384,7 +390,7 @@ export default function ServicePage() {
                   <select 
                     value={detailStatus}
                     onChange={(e) => setDetailStatus(e.target.value)}
-                    disabled={role === 'finance_staff'}
+                    disabled={role === 'finance_staff' || role === 'viewer'}
                     className="w-full px-3 pr-10 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none cursor-pointer"
                   >
                     <option value="antrean">Antrean</option>
@@ -401,7 +407,7 @@ export default function ServicePage() {
                     value={detailNotes}
                     onChange={(e) => setDetailNotes(e.target.value)}
                     placeholder="Tulis diagnosa & tindakan di sini..."
-                    disabled={role === 'finance_staff'}
+                    disabled={role === 'finance_staff' || role === 'viewer'}
                     className="w-full p-3 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-indigo-500 dark:text-zinc-50 dark:placeholder:text-zinc-500 min-h-[5rem] resize-none"
                   />
                 </div>
@@ -417,7 +423,7 @@ export default function ServicePage() {
                         const cleanVal = e.target.value.replace(/[^0-9]/g, '');
                         setDetailServiceCost(cleanVal === '' ? 0 : parseInt(cleanVal, 10));
                       }}
-                      disabled={role === 'finance_staff'}
+                      disabled={role === 'finance_staff' || role === 'viewer'}
                       className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none dark:text-zinc-50 dark:placeholder:text-zinc-500"
                     />
                   </div>
@@ -430,7 +436,7 @@ export default function ServicePage() {
                         const cleanVal = e.target.value.replace(/[^0-9]/g, '');
                         setDetailPartCost(cleanVal === '' ? 0 : parseInt(cleanVal, 10));
                       }}
-                      disabled={role === 'finance_staff'}
+                      disabled={role === 'finance_staff' || role === 'viewer'}
                       className="w-full px-3 py-1.5 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-bold outline-none dark:text-zinc-50 dark:placeholder:text-zinc-500"
                     />
                   </div>
@@ -446,7 +452,7 @@ export default function ServicePage() {
                   {formatRupiah(detailServiceCost + detailPartCost)}
                 </span>
               </div>
-              {role !== 'finance_staff' && (
+              {role !== 'finance_staff' && role !== 'viewer' && (
                 <button
                   type="submit"
                   disabled={updating}

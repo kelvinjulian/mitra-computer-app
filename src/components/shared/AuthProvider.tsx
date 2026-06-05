@@ -8,7 +8,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
-  role: 'owner' | 'staff' | 'manager' | 'finance_staff' | null;
+  role: 'owner' | 'staff' | 'manager' | 'finance_staff' | 'viewer' | null;
   loading: boolean;
   logout: () => Promise<void>;
 }
@@ -24,7 +24,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [role, setRole] = useState<'owner' | 'staff' | 'manager' | 'finance_staff' | null>(null);
+  const [role, setRole] = useState<'owner' | 'staff' | 'manager' | 'finance_staff' | 'viewer' | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -39,7 +39,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (session) {
           setUser(session.user);
           const userRole = session.user.app_metadata?.role || session.user.user_metadata?.role || 'staff';
-          setRole(userRole as 'owner' | 'staff' | 'manager' | 'finance_staff');
+          setRole(userRole as 'owner' | 'staff' | 'manager' | 'finance_staff' | 'viewer');
         } else {
           setUser(null);
           setRole(null);
@@ -58,7 +58,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       if (session) {
         setUser(session.user);
         const userRole = session.user.app_metadata?.role || session.user.user_metadata?.role || 'staff';
-        setRole(userRole as 'owner' | 'staff' | 'manager' | 'finance_staff');
+        setRole(userRole as 'owner' | 'staff' | 'manager' | 'finance_staff' | 'viewer');
       } else {
         setUser(null);
         setRole(null);
@@ -94,7 +94,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     } else {
       // If logged in and on login page, redirect to landing dashboard
       if (isAuthPage) {
-        if (role === 'owner' || role === 'manager' || role === 'finance_staff') {
+        if (role === 'owner' || role === 'manager' || role === 'finance_staff' || role === 'viewer') {
           router.push('/dashboard');
         } else {
           router.push('/kasir');

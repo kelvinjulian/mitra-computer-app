@@ -64,8 +64,8 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   };
 
   // Avatar initials & label
-  const avatarInitials = role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : 'ST';
-  const roleLabel = role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : role === 'finance_staff' ? t('Finance Staff') : t('Karyawan');
+  const avatarInitials = role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : role === 'viewer' ? 'VI' : 'ST';
+  const roleLabel = role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : role === 'finance_staff' ? t('Finance Staff') : role === 'viewer' ? t('Viewer') : t('Karyawan');
 
   return (
     <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-80 dark:bg-opacity-80 transition-colors duration-200 print:hidden">

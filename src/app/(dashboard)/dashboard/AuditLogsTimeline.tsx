@@ -37,6 +37,11 @@ export default function AuditLogsTimeline() {
       setLoading(true);
       setError(null);
       
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
+
       const { data, error: fetchErr } = await supabase
         .from('audit_logs')
         .select('*')
@@ -84,7 +89,7 @@ export default function AuditLogsTimeline() {
       case 'LOGIN':
         return 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50';
       default:
-        return 'bg-slate-500/10 text-slate-650 border-slate-500/20 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700';
+        return 'bg-slate-500/10 text-slate-655 border-slate-500/20 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700';
     }
   };
 
@@ -102,6 +107,34 @@ export default function AuditLogsTimeline() {
     const detailsMatch = JSON.stringify(log.details).toLowerCase().includes(searchTerm.toLowerCase());
     return emailMatch || actionMatch || detailsMatch;
   });
+
+  if (role !== 'owner') {
+    return (
+      <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 border-b border-slate-100 dark:border-zinc-800 pb-4">
+          <div className="p-2 bg-indigo-500/10 text-indigo-500 rounded-xl">
+            <History size={20} />
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-zinc-50 text-base">Log Audit Aktivitas Karyawan</h3>
+            <p className="text-xs text-slate-500 dark:text-zinc-400">Jejak audit permanen transaksi kasir dan perubahan buku kas.</p>
+          </div>
+        </div>
+
+        {/* Secure clear notification card */}
+        <div className="bg-slate-50 dark:bg-zinc-950/40 border border-slate-150 dark:border-zinc-800/60 rounded-xl p-6 text-center space-y-2">
+          <div className="mx-auto w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-500 flex items-center justify-center">
+            <History size={20} />
+          </div>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Akses Log Terbatas</h4>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+            Jejak audit riwayat transaksi dan data internal ruko hanya dapat dipantau secara penuh oleh Owner utama Mitra Computer.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm space-y-6">
@@ -154,22 +187,11 @@ export default function AuditLogsTimeline() {
             <Loader2 className="animate-spin text-indigo-500" size={32} />
             <p className="text-xs font-medium">Memuat riwayat log audit...</p>
           </div>
-        ) : (filteredLogs.length === 0 || role !== 'owner') ? (
+        ) : filteredLogs.length === 0 ? (
           <div className="text-center py-20 text-slate-400">
             <Activity className="mx-auto text-slate-350 dark:text-zinc-700 mb-3" size={36} />
-            {role !== 'owner' ? (
-              <>
-                <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">Akses Log Terbatas</p>
-                <p className="text-[10px] text-slate-500 dark:text-zinc-400 max-w-md mx-auto">
-                  Jejak audit riwayat transaksi dan data internal ruko hanya dapat dipantau secara penuh oleh Owner utama Mitra Computer.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-xs font-medium">Belum ada catatan log aktivitas</p>
-                <p className="text-[10px] text-slate-550">Segala transaksi kasir dan penghapusan kas akan dicatat secara otomatis di sini.</p>
-              </>
-            )}
+            <p className="text-xs font-medium">Belum ada catatan log aktivitas</p>
+            <p className="text-[10px] text-slate-555">Segala transaksi kasir dan penghapusan kas akan dicatat secara otomatis di sini.</p>
           </div>
         ) : (
           <div className="relative border-l-2 border-slate-100 dark:border-zinc-800 ml-4 pl-6 space-y-6">
@@ -205,7 +227,7 @@ export default function AuditLogsTimeline() {
                     {/* Expandable Details Button */}
                     <button
                       onClick={() => toggleExpand(log.id)}
-                      className="w-full flex items-center justify-between py-1.5 px-3 rounded-lg bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/60 dark:border-zinc-800 text-[10px] font-bold text-slate-550 dark:text-zinc-400 transition-colors"
+                      className="w-full flex items-center justify-between py-1.5 px-3 rounded-lg bg-white dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 border border-slate-200/60 dark:border-zinc-800 text-[10px] font-bold text-slate-555 dark:text-zinc-400 transition-colors"
                     >
                       <span>Detail Metadata</span>
                       {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}

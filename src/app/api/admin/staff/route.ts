@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email, password, and name are required.' }, { status: 400 });
     }
 
-    const finalRole = (role === 'manager' || role === 'finance_staff' || role === 'staff') ? role : 'staff';
+    const finalRole = (role === 'manager' || role === 'finance_staff' || role === 'viewer' || role === 'staff') ? role : 'staff';
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: {

@@ -40,6 +40,10 @@ export default function InventoryPage() {
     try {
       setLoading(true);
       setError(null);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
       const { data, error: fetchErr } = await supabase
         .from('products')
         .select('*')
@@ -62,6 +66,7 @@ export default function InventoryPage() {
   // 2. Tambah Data (Create) ke Supabase
   const handleAddProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (role === 'viewer') return;
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
@@ -101,7 +106,7 @@ export default function InventoryPage() {
   // 3. Edit Data (Update) di Supabase
   const handleEditProduct = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingProduct) return;
+    if (role === 'viewer' || !editingProduct) return;
     setUpdating(true);
 
     const formData = new FormData(e.currentTarget);
@@ -139,6 +144,7 @@ export default function InventoryPage() {
 
   // 4. Hapus Data (Delete) dari Supabase
   const handleDeleteProduct = async (id: string, name: string) => {
+    if (role === 'viewer') return;
     if (!window.confirm(`Apakah Anda yakin ingin menghapus produk "${name}"?`)) return;
 
     try {
@@ -158,6 +164,7 @@ export default function InventoryPage() {
   // 5. Bersih-bersih Produk Hantu (produk berstok 0 hasil custom item lama)
   const [cleaning, setCleaning] = useState(false);
   const handleCleanGhostProducts = async () => {
+    if (role === 'viewer') return;
     const confirmed = window.confirm(
       'Ini akan menghapus SEMUA produk berstok 0 yang bukan terikat stok aktif dari inventory. Pastikan Anda sudah menghapus relasi transaction_items di Supabase terlebih dahulu (atau jalankan SQL: ALTER TABLE transaction_items ALTER COLUMN product_id DROP NOT NULL).\n\nLanjutkan?'
     );
@@ -277,7 +284,7 @@ export default function InventoryPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 items-start md:items-auto self-start md:self-auto">
-            {role !== 'manager' && role !== 'finance_staff' && (
+            {role !== 'manager' && role !== 'finance_staff' && role !== 'viewer' && (
               <button
                 onClick={handleCleanGhostProducts}
                 disabled={cleaning}
@@ -288,7 +295,7 @@ export default function InventoryPage() {
                 {cleaning ? 'Membersihkan...' : 'Hapus Produk Hantu'}
               </button>
             )}
-            {role !== 'finance_staff' && (
+            {role !== 'finance_staff' && role !== 'viewer' && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 shadow-sm flex items-center gap-1.5"
@@ -330,8 +337,8 @@ export default function InventoryPage() {
                   <th className="py-3.5 px-4 text-right hidden md:table-cell">Harga Modal</th>
                   <th className="py-3.5 px-4 text-right">Harga Jual</th>
                   <th className="py-3.5 px-4 text-center">Stok</th>
-                  <th className={`py-3.5 px-4 text-center hidden sm:table-cell ${role === 'finance_staff' ? 'rounded-r-xl' : ''}`}>Batas Min</th>
-                  {role !== 'finance_staff' && <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>}
+                  <th className={`py-3.5 px-4 text-center hidden sm:table-cell ${(role === 'finance_staff' || role === 'viewer') ? 'rounded-r-xl' : ''}`}>Batas Min</th>
+                  {role !== 'finance_staff' && role !== 'viewer' && <th className="py-3.5 px-4 text-center rounded-r-xl">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -376,7 +383,7 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-center font-medium text-slate-400 hidden sm:table-cell">{product.min_stock_threshold}</td>
-                      {role !== 'finance_staff' && (
+                      {role !== 'finance_staff' && role !== 'viewer' && (
                         <td className="py-4 px-4 text-center">
                           <div className="flex justify-center items-center gap-2">
                             <button 

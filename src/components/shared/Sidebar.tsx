@@ -85,14 +85,14 @@ export default function Sidebar({ className = '' }: SidebarProps) {
       <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800/80 mb-3">
           <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm uppercase">
-            {role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : 'ST'}
+            {role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : role === 'viewer' ? 'VI' : 'ST'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
               {user?.user_metadata?.name || user?.email || 'User'}
             </p>
             <p className="text-[10px] text-zinc-500 truncate capitalize">
-              {role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : role === 'finance_staff' ? t('Finance Staff') : t('Karyawan')}
+              {role === 'owner' ? t('Administrator') : role === 'manager' ? t('Manager') : role === 'finance_staff' ? t('Finance Staff') : role === 'viewer' ? t('Viewer') : t('Karyawan')}
             </p>
           </div>
         </div>

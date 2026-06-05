@@ -30,7 +30,7 @@ interface StaffUser {
 }
 
 export default function StaffManagementPage() {
-  const { role } = useAuth();
+  const { role, loading: authLoading } = useAuth();
   const router = useRouter();
   const [staffList, setStaffList] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +58,7 @@ export default function StaffManagementPage() {
   };
 
   const fetchStaff = async () => {
+    if (role !== 'owner') return;
     try {
       setLoading(true);
       setError(null);
@@ -83,8 +84,12 @@ export default function StaffManagementPage() {
   };
 
   useEffect(() => {
-    fetchStaff();
-  }, []);
+    if (role === 'owner') {
+      fetchStaff();
+    } else if (role !== null) {
+      setLoading(false);
+    }
+  }, [role]);
 
   const handleCreateStaff = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -190,13 +195,22 @@ export default function StaffManagementPage() {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
+  if (authLoading || role === null) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 gap-3">
+        <Loader2 className="animate-spin text-indigo-500" size={32} />
+        <p className="text-sm font-medium">Memeriksa hak akses keamanan...</p>
+      </div>
+    );
+  }
+
   if (role !== 'owner') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4 max-w-lg mx-auto mt-12 animate-fade-in">
         <div className="p-4 bg-indigo-50 dark:bg-indigo-950/35 rounded-full text-indigo-600/80">
           <Lock size={48} />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Akses Terbatas / Restricted Access</h3>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Akses Terbatas</h3>
         <p className="text-sm text-slate-500 dark:text-zinc-400 max-w-sm">
           Hanya bisa diakses oleh Owner utama ruko.
         </p>
@@ -383,9 +397,11 @@ export default function StaffManagementPage() {
                   required 
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 cursor-pointer"
                 >
-                  <option value="staff">Staff (Kasir)</option>
+                  <option value="owner">Owner (Utama)</option>
                   <option value="manager">Manager (Supervisor)</option>
                   <option value="finance_staff">Stok & Keuangan (Finance Staff)</option>
+                  <option value="staff">Staff (Kasir)</option>
+                  <option value="viewer">Pengamat (Viewer)</option>
                 </select>
               </div>
 
@@ -462,9 +478,11 @@ export default function StaffManagementPage() {
                   required 
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs outline-none dark:text-zinc-100 cursor-pointer"
                 >
-                  <option value="staff">Staff (Kasir)</option>
+                  <option value="owner">Owner (Utama)</option>
                   <option value="manager">Manager (Supervisor)</option>
                   <option value="finance_staff">Stok & Keuangan (Finance Staff)</option>
+                  <option value="staff">Staff (Kasir)</option>
+                  <option value="viewer">Pengamat (Viewer)</option>
                 </select>
               </div>
 

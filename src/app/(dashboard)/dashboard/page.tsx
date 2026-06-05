@@ -19,6 +19,7 @@ import { Database } from '@/types/database.types';
 import AuditLogsTimeline from './AuditLogsTimeline';
 import DateRangePicker, { DateRange } from '@/components/shared/DateRangePicker';
 import { useLanguage } from '@/components/shared/LanguageProvider';
+import { useAuth } from '@/components/shared/AuthProvider';
 import SalesChart from './SalesChart';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -26,6 +27,7 @@ type Service = Database['public']['Tables']['services']['Row'];
 
 export default function DashboardPage() {
   const { t } = useLanguage();
+  const { role } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +71,11 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        return;
+      }
 
       // 1. Fetch Products
       const { data: prods, error: prodErr } = await supabase
@@ -208,22 +215,24 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Action Buttons */}
-      <div className="flex flex-wrap gap-3">
-        <Link
-          href="/kasir"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white transition-colors px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm shadow-indigo-600/20 cursor-pointer"
-        >
-          <ShoppingBag size={14} />
-          {t('POS Kasir Baru')}
-        </Link>
-        <Link
-          href="/service"
-          className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 transition-colors px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
-        >
-          <Wrench size={14} />
-          {t('Terima Service')}
-        </Link>
-      </div>
+      {role !== 'viewer' && (
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/kasir"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white transition-colors px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm shadow-indigo-600/20 cursor-pointer"
+          >
+            <ShoppingBag size={14} />
+            {t('POS Kasir Baru')}
+          </Link>
+          <Link
+            href="/service"
+            className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 transition-colors px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-pointer"
+          >
+            <Wrench size={14} />
+            {t('Terima Service')}
+          </Link>
+        </div>
+      )}
 
       {/* Grid Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
