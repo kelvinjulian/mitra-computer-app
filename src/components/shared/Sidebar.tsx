@@ -8,7 +8,6 @@ import {
   Package, 
   Wrench, 
   TrendingUp, 
-  LogOut,
   Laptop,
   Users
 } from 'lucide-react';
@@ -21,7 +20,7 @@ interface SidebarProps {
 
 export default function Sidebar({ className = '' }: SidebarProps) {
   const pathname = usePathname();
-  const { role, user, logout } = useAuth();
+  const { role, user } = useAuth();
   const { t } = useLanguage();
 
   const menuItems = [
@@ -83,7 +82,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
 
       {/* User Info / Footer */}
       <div className="p-4 border-t border-zinc-200 dark:border-zinc-800">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800/80 mb-3">
+        <div className="flex items-center gap-3 px-2 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800/80">
           <div className="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm uppercase">
             {role === 'owner' ? 'OW' : role === 'manager' ? 'MN' : role === 'finance_staff' ? 'FS' : role === 'viewer' ? 'VI' : 'ST'}
           </div>
@@ -96,14 +95,6 @@ export default function Sidebar({ className = '' }: SidebarProps) {
             </p>
           </div>
         </div>
-
-        <button 
-          onClick={logout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-medium text-zinc-500 hover:bg-zinc-150 dark:hover:bg-zinc-800/80 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-200 cursor-pointer"
-        >
-          <LogOut size={14} />
-          <span>{t('Keluar')}</span>
-        </button>
       </div>
     </aside>
   );

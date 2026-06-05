@@ -18,7 +18,7 @@ import { useLanguage } from '@/components/shared/LanguageProvider';
 export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, user } = useAuth();
+  const { role, user, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [time, setTime] = useState<string>('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -141,6 +141,16 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 <span className="inline-block px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-100/30 dark:border-indigo-900/30">
                   {role ? role.replace('_', ' ').toUpperCase() : ''}
                 </span>
+              </div>
+
+              <div className="border-t border-slate-150 dark:border-zinc-850 pt-2">
+                <button
+                  onClick={logout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:text-rose-600 dark:hover:text-rose-400 transition-all duration-150 text-left cursor-pointer"
+                >
+                  <LogOut size={14} />
+                  {t('Keluar Aplikasi')}
+                </button>
               </div>
             </div>
           )}
