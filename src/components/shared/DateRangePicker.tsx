@@ -329,8 +329,8 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
 
       {/* ── Floating Popover ── */}
       {open && (
-        <div className="absolute right-0 mt-2 z-50 animate-popover-fade-in">
-          <div className="flex flex-col lg:flex-row bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl shadow-slate-200/60 dark:shadow-zinc-900/80 border border-slate-200 dark:border-zinc-800 overflow-hidden w-[min(calc(100vw-2rem),560px)] lg:w-auto">
+        <div className="absolute left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-0 mt-2 z-50 w-[calc(100vw-32px)] sm:w-auto max-w-[360px] sm:max-w-none bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden mx-auto animate-popover-fade-in">
+          <div className="flex flex-col lg:flex-row w-full">
 
             {/* ── Quick Select: horizontal chip bar on <lg, left sidebar on lg+ ── */}
             <div className="flex flex-row overflow-x-auto lg:overflow-x-visible lg:flex-col gap-1 p-3 border-b border-slate-100 dark:border-zinc-800 lg:border-b-0 lg:border-r shrink-0 lg:w-40 bg-slate-50/50 dark:bg-zinc-800/40">
