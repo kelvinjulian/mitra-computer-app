@@ -74,23 +74,23 @@ export default function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
         {/* ✅ HAMBURGER MENU - RENDER UNTUK SEMUA ROLE */}
         <button
           onClick={onMenuClick}
-          className="p-2 md:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
+          className="p-2 min-[850px]:hidden text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg mr-1 cursor-pointer"
           title="Menu Utama"
         >
           <Menu size={18} />
         </button>
 
-        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 hidden md:inline">Mitra Computer</span>
-        <ChevronRight size={12} className="text-zinc-300 dark:text-zinc-700 hidden md:inline" />
-        <span className="text-sm md:text-base font-semibold text-zinc-800 dark:text-zinc-100 max-w-[180px] md:max-w-none truncate" title={getPageTitle()}>
+        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 hidden min-[850px]:inline">Mitra Computer</span>
+        <ChevronRight size={12} className="text-zinc-300 dark:text-zinc-700 hidden min-[850px]:inline" />
+        <span className="text-sm min-[850px]:text-base font-semibold text-zinc-800 dark:text-zinc-100 max-w-[180px] min-[850px]:max-w-none truncate" title={getPageTitle()}>
           <span>{getPageTitle()}</span>
         </span>
       </div>
 
       {/* Action Controls */}
-      <div className="flex items-center gap-2 md:gap-4">
+      <div className="flex items-center gap-2 min-[850px]:gap-4">
         {/* Real-time Clock */}
-        <div className="hidden md:flex items-center gap-2 text-xs font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-full">
+        <div className="hidden min-[850px]:flex items-center gap-2 text-xs font-semibold text-zinc-500 bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-full">
           <Clock size={12} className="text-indigo-500" />
           <span>{time || '--:--:--'} WIB</span>
         </div>
