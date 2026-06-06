@@ -25,7 +25,7 @@ type DbProduct = Database['public']['Tables']['products']['Row'];
 
 export default function KasirPage() {
   const { t } = useLanguage();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { items, addItem, removeItem, updateQuantity, clearCart, getTotalAmount } = useCartStore();
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,23 +136,49 @@ export default function KasirPage() {
     setError(null);
     try {
       // 1. Dapatkan staff_id dari tabel users (atau buat default)
-      const { data: users, error: usersErr } = await supabase
-        .from('users')
-        .select('id')
-        .limit(1);
+      let staffId = null;
+      if (user) {
+        const { data: dbUser, error: userErr } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
 
-      if (usersErr) throw usersErr;
+        if (!userErr && dbUser) {
+          staffId = dbUser.id;
+        }
+      }
 
-      let staffId = users?.[0]?.id;
-      if (!staffId) {
+      // Jika user tidak ditemukan di tabel public.users, daftarkan profilnya
+      if (!staffId && user) {
         const { data: newUser, error: insertUserErr } = await supabase
           .from('users')
-          .insert([{ name: 'Staff Toko', role: 'staff' }])
+          .insert([{
+            id: user.id,
+            name: user.user_metadata?.name || user.email || 'Staff Toko',
+            role: (role === 'owner' || role === 'staff') ? role : 'staff'
+          }])
           .select('id')
           .single();
 
-        if (insertUserErr) throw insertUserErr;
-        staffId = newUser.id;
+        if (!insertUserErr && newUser) {
+          staffId = newUser.id;
+        }
+      }
+
+      // Fallback ke staff pertama di DB jika terjadi kegagalan untuk menjamin transaksi tetap sukses
+      if (!staffId) {
+        const { data: users, error: usersErr } = await supabase
+          .from('users')
+          .select('id')
+          .limit(1);
+        if (!usersErr && users && users.length > 0) {
+          staffId = users[0].id;
+        }
+      }
+
+      if (!staffId) {
+        throw new Error('Tidak ada staff yang valid untuk transaksi ini.');
       }
 
       // 2. Buat Transaksi Baru

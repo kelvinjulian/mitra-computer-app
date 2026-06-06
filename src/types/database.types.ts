@@ -134,6 +134,7 @@ export interface Database {
           service_cost: number | null
           part_cost: number
           technician_notes: string | null
+          completed_by_id: string | null
           created_at: string
           updated_at: string
         }
@@ -147,6 +148,7 @@ export interface Database {
           service_cost?: number | null
           part_cost?: number
           technician_notes?: string | null
+          completed_by_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -160,6 +162,7 @@ export interface Database {
           service_cost?: number | null
           part_cost?: number
           technician_notes?: string | null
+          completed_by_id?: string | null
           created_at?: string
           updated_at?: string
         }

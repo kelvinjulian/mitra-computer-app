@@ -60,6 +60,7 @@ CREATE TABLE services (
     service_cost BIGINT, -- Nullable if not set yet
     part_cost BIGINT NOT NULL DEFAULT 0,
     technician_notes TEXT,
+    completed_by_id UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

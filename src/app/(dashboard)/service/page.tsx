@@ -23,17 +23,22 @@ import { useLanguage } from '@/components/shared/LanguageProvider';
 import { useAuth } from '@/components/shared/AuthProvider';
 
 type Service = Database['public']['Tables']['services']['Row'];
+type ServiceWithStaff = Service & {
+  completed_by?: {
+    name: string;
+  } | null;
+};
 
 export default function ServicePage() {
   const { t } = useLanguage();
-  const { role } = useAuth();
-  const [services, setServices] = useState<Service[]>([]);
+  const { role, user } = useAuth();
+  const [services, setServices] = useState<ServiceWithStaff[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<ServiceWithStaff | null>(null);
 
   // States for right side editing console
   const [detailStatus, setDetailStatus] = useState<string>('');
@@ -66,12 +71,30 @@ export default function ServicePage() {
       if (!session || !session.access_token) {
         return;
       }
-      const { data, error: fetchErr } = await supabase
+
+      // 1. Fetch services
+      const { data: servicesData, error: fetchErr } = await supabase
         .from('services')
         .select('*')
         .order('created_at', { ascending: false });
       if (fetchErr) throw fetchErr;
-      setServices(data || []);
+
+      // 2. Fetch users
+      const { data: usersData, error: usersErr } = await supabase
+        .from('users')
+        .select('id, name');
+      if (usersErr) throw usersErr;
+
+      // 3. Map services with staff name client-side
+      const mappedServices: ServiceWithStaff[] = (servicesData || []).map((svc) => {
+        const completedByUser = (usersData || []).find((u) => u.id === svc.completed_by_id);
+        return {
+          ...svc,
+          completed_by: completedByUser ? { name: completedByUser.name } : null
+        };
+      });
+
+      setServices(mappedServices);
     } catch (err: any) {
       console.error('Error fetching services:', err.message);
       setError(err.message || 'Gagal mengambil data service.');
@@ -157,18 +180,41 @@ export default function ServicePage() {
     setUpdating(true);
 
     try {
+      const isStatusChangedToCompleted = selectedService.status !== 'selesai' && detailStatus === 'selesai';
+      const isStatusChangedFromCompleted = selectedService.status === 'selesai' && detailStatus !== 'selesai';
+
+      const updatePayload: any = {
+        status: detailStatus as any,
+        technician_notes: detailNotes,
+        service_cost: detailServiceCost,
+        part_cost: detailPartCost,
+        updated_at: new Date().toISOString()
+      };
+
+      if (isStatusChangedToCompleted) {
+        updatePayload.completed_by_id = user?.id || null;
+      } else if (isStatusChangedFromCompleted) {
+        updatePayload.completed_by_id = null;
+      }
+
       const { error: updateErr } = await supabase
         .from('services')
-        .update({
-          status: detailStatus as any,
-          technician_notes: detailNotes,
-          service_cost: detailServiceCost,
-          part_cost: detailPartCost,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', selectedService.id);
 
       if (updateErr) throw updateErr;
+
+      let completedByObj = selectedService.completed_by;
+      if (isStatusChangedToCompleted && user?.id) {
+        const { data: dbUser } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', user.id)
+          .maybeSingle();
+        completedByObj = { name: dbUser?.name || user.user_metadata?.name || user.email || 'Staff Toko' };
+      } else if (isStatusChangedFromCompleted) {
+        completedByObj = null;
+      }
 
       await fetchServices();
       // Update selectedService state
@@ -177,7 +223,8 @@ export default function ServicePage() {
         status: detailStatus as any,
         technician_notes: detailNotes,
         service_cost: detailServiceCost,
-        part_cost: detailPartCost
+        part_cost: detailPartCost,
+        completed_by: completedByObj
       } : null);
 
       showToast('Perubahan service berhasil disimpan!');
@@ -418,6 +465,13 @@ export default function ServicePage() {
                     <option value="batal">Batal</option>
                   </select>
                 </div>
+
+                {selectedService.status === 'selesai' && selectedService.completed_by?.name && (
+                  <div className="bg-indigo-50 dark:bg-indigo-950/20 p-3 rounded-xl border border-indigo-150 dark:border-indigo-900/60">
+                    <span className="font-bold text-indigo-500 uppercase text-[9px] tracking-wider block mb-1">Diselesaikan Oleh</span>
+                    <span className="font-semibold text-slate-800 dark:text-zinc-200">{selectedService.completed_by.name}</span>
+                  </div>
+                )}
 
                 <div>
                   <span className="font-bold text-slate-400 uppercase text-[9px] tracking-wider block mb-1">Catatan Teknisi</span>
