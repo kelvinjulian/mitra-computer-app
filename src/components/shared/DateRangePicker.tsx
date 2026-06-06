@@ -315,7 +315,7 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="relative" ref={panelRef}>
+    <div className="relative w-full sm:w-auto flex justify-start sm:block" ref={panelRef}>
 
       {/* ── Trigger Button ── */}
       <button
