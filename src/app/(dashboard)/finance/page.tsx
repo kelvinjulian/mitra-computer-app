@@ -178,7 +178,22 @@ export default function FinancePage() {
 
         if (svcErr) throw svcErr;
 
-        setServiceDetail(svc);
+        let completedByName = null;
+        if (svc.completed_by_id) {
+          const { data: usr } = await supabase
+            .from('users')
+            .select('name')
+            .eq('id', svc.completed_by_id)
+            .maybeSingle();
+          if (usr) {
+            completedByName = usr.name;
+          }
+        }
+
+        setServiceDetail({
+          ...svc,
+          completed_by: completedByName ? { name: completedByName } : null
+        });
       }
     } catch (err: any) {
       console.error('Error fetching income detail:', err.message);
@@ -1023,6 +1038,11 @@ export default function FinancePage() {
                       <div>
                         Selesai Pada: <span className="font-medium text-slate-800 dark:text-zinc-200">{formatDateTime(serviceDetail.updated_at)}</span>
                       </div>
+                      {serviceDetail.completed_by?.name && (
+                        <div>
+                          Diselesaikan Oleh: <span className="font-medium text-slate-800 dark:text-zinc-200">{serviceDetail.completed_by.name}</span>
+                        </div>
+                      )}
                       <div>
                         Nama Pelanggan: <span className="font-medium text-slate-800 dark:text-zinc-200">{serviceDetail.customer_name}</span>
                       </div>
