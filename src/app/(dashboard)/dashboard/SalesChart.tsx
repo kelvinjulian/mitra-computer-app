@@ -87,16 +87,31 @@ export default function SalesChart({ dateRange }: SalesChartProps) {
 
     // Set configuration dynamically based on activeView
     if (activeView === 'profit_vs_expense') {
-      const netProfitGrad = createGradient('rgba(79, 70, 229, 0.35)', 'rgba(79, 70, 229, 0.0)');
+      const grossRevenueGrad = createGradient('rgba(124, 58, 237, 0.35)', 'rgba(124, 58, 237, 0.0)');
+      const netProfitGrad = createGradient('rgba(16, 185, 129, 0.35)', 'rgba(16, 185, 129, 0.0)');
       const expensesGrad = createGradient('rgba(239, 68, 68, 0.25)', 'rgba(239, 68, 68, 0.0)');
 
       datasetsToRender.push(
         {
+          label: t('Total Pendapatan Hari Ini'),
+          data: datasets.totalInflow,
+          borderColor: '#7c3aed', // violet-600
+          borderWidth: 3,
+          pointBackgroundColor: '#7c3aed',
+          pointBorderColor: isDark ? '#09090b' : '#ffffff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 6,
+          pointRadius: 3.5,
+          tension: 0.3,
+          fill: true,
+          backgroundColor: grossRevenueGrad,
+        },
+        {
           label: t('Keuntungan Bersih'),
           data: datasets.netProfit,
-          borderColor: '#4f46e5', // indigo-600
+          borderColor: '#10b981', // emerald-500
           borderWidth: 3,
-          pointBackgroundColor: '#4f46e5',
+          pointBackgroundColor: '#10b981',
           pointBorderColor: isDark ? '#09090b' : '#ffffff',
           pointBorderWidth: 2,
           pointHoverRadius: 6,
@@ -106,7 +121,7 @@ export default function SalesChart({ dateRange }: SalesChartProps) {
           backgroundColor: netProfitGrad,
         },
         {
-          label: t('Buku Kas Pengeluaran'),
+          label: t('Total Pengeluaran'),
           data: datasets.expenses,
           borderColor: '#ef4444', // red-500
           borderWidth: 2,
