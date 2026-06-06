@@ -523,14 +523,14 @@ export default function FinancePage() {
       )}
 
       {/* Page Header with Global Date Filter */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm">
+        <div className="flex flex-col max-w-xl">
           <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-zinc-50">Laporan &amp; Analisis Finansial</h2>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Kelola arus kas masuk, pengeluaran operasional ruko, dan pantau profit bersih.</p>
         </div>
         
         {/* Date Range Filter (Global) — uses shared DateRangePicker component */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="w-full sm:w-auto shrink-0 flex items-center gap-3 sm:justify-end">
           <DateRangePicker
             value={dateRange}
             onChange={(range) => setDateRange(range)}
@@ -547,17 +547,17 @@ export default function FinancePage() {
       </div>
 
       {/* Financial Overview Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 min-[380px]:grid-cols-2 md:grid-cols-3 gap-3">
         {/* Net Profit Card */}
-        <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider">Keuntungan Bersih</span>
-            <div className="p-1.5 md:p-2 bg-indigo-500/10 text-indigo-500 rounded-xl">
+        <div className="bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Keuntungan Bersih</span>
+            <div className="p-1.5 md:p-2 bg-indigo-500/10 text-indigo-500 rounded-xl shrink-0">
               <Wallet size={14} className="md:w-[18px] md:h-[18px]" />
             </div>
           </div>
-          <div className="mt-2 md:mt-4">
-            <h3 className="text-sm md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">{formatRupiah(netProfit)}</h3>
+          <div className="mt-2 md:mt-4 min-w-0">
+            <h3 className="text-xs min-[360px]:text-sm sm:text-base md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight truncate select-all" title={formatRupiah(netProfit)}>{formatRupiah(netProfit)}</h3>
             <p className="text-[9px] md:text-[10px] text-indigo-600 font-semibold mt-0.5 md:mt-1 flex items-center gap-1">
               <TrendingUp size={10} />
               {netProfit >= 0 ? 'Arus Kas Positif' : 'Arus Kas Negatif'}
@@ -566,29 +566,29 @@ export default function FinancePage() {
         </div>
 
         {/* Total Cash In */}
-        <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Pemasukan</span>
-            <div className="p-1.5 md:p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+            <div className="p-1.5 md:p-2 bg-blue-500/10 text-blue-500 rounded-xl shrink-0">
               <TrendingUp size={14} className="md:w-[18px] md:h-[18px]" />
             </div>
           </div>
-          <div className="mt-2 md:mt-4">
-            <h3 className="text-sm md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">{formatRupiah(totalIncome)}</h3>
+          <div className="mt-2 md:mt-4 min-w-0">
+            <h3 className="text-xs min-[360px]:text-sm sm:text-base md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight truncate select-all" title={formatRupiah(totalIncome)}>{formatRupiah(totalIncome)}</h3>
             <p className="text-[9px] md:text-[10px] text-slate-400 mt-0.5 md:mt-1 truncate">Berdasarkan {incomes.length} transaksi</p>
           </div>
         </div>
 
         {/* Total Cash Out */}
-        <div className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between col-span-2 md:col-span-1">
-          <div className="flex items-center justify-between">
+        <div className="bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between col-span-1 min-[380px]:col-span-2 md:col-span-1">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Total Pengeluaran</span>
-            <div className="p-1.5 md:p-2 bg-rose-500/10 text-rose-500 rounded-xl">
+            <div className="p-1.5 md:p-2 bg-rose-500/10 text-rose-500 rounded-xl shrink-0">
               <TrendingDown size={14} className="md:w-[18px] md:h-[18px]" />
             </div>
           </div>
-          <div className="mt-2 md:mt-4">
-            <h3 className="text-sm md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight">{formatRupiah(totalExpense)}</h3>
+          <div className="mt-2 md:mt-4 min-w-0">
+            <h3 className="text-xs min-[360px]:text-sm sm:text-base md:text-2xl font-extrabold text-slate-900 dark:text-zinc-50 tracking-tight truncate select-all" title={formatRupiah(totalExpense)}>{formatRupiah(totalExpense)}</h3>
             <p className="text-[9px] md:text-[10px] text-rose-600 font-semibold mt-0.5 md:mt-1 truncate">Operasional toko</p>
           </div>
         </div>
@@ -604,42 +604,42 @@ export default function FinancePage() {
             
             {/* Baris 1: Total Keuntungan Bersih Gabungan (Full Width) */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4 rounded-xl flex justify-between items-center shadow-sm">
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">Total Keuntungan Bersih (Gabungan)</span>
-                <span className="text-xl font-extrabold text-zinc-900 dark:text-white block mt-1">
+                <span className="text-xl font-extrabold text-zinc-900 dark:text-white block mt-1 truncate select-all" title={formatRupiah(filteredPosMargin + filteredServiceMargin)}>
                   {formatRupiah(filteredPosMargin + filteredServiceMargin)}
                 </span>
-                <span className="text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5">
+                <span className="text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5 truncate" title={isFiltered ? `Filter aktif: ${dateFrom || '...'} s/d ${dateTo || '...'}` : 'Total laba bersih operasional sebelum dikurangi pengeluaran toko'}>
                   {isFiltered ? `Filter aktif: ${dateFrom || '...'} s/d ${dateTo || '...'}` : 'Total laba bersih operasional sebelum dikurangi pengeluaran toko'}
                 </span>
               </div>
-              <div className="p-2.5 bg-indigo-500/10 text-indigo-500 rounded-xl shrink-0">
+              <div className="p-2.5 bg-indigo-500/10 text-indigo-500 rounded-xl shrink-0 ml-2">
                 <TrendingUp size={20} />
               </div>
             </div>
 
             {/* Baris 2: Sub-Keuntungan Bersih Sejajar (2 Kolom) */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 min-[320px]:grid-cols-2 gap-2">
               {/* Kartu Kiri: Keuntungan Bersih Penjualan (POS) */}
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 md:p-4 rounded-xl flex justify-between items-start shadow-sm">
-                <div>
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 md:p-4 rounded-xl flex justify-between items-start shadow-sm min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">Margin POS</span>
-                  <span className="text-xs md:text-base font-extrabold text-zinc-900 dark:text-white block mt-1">{formatRupiah(filteredPosMargin)}</span>
-                  <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5">Produk di kasir</span>
+                  <span className="text-xs md:text-base font-extrabold text-zinc-900 dark:text-white block mt-1 truncate select-all" title={formatRupiah(filteredPosMargin)}>{formatRupiah(filteredPosMargin)}</span>
+                  <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5 truncate">Produk di kasir</span>
                 </div>
-                <div className="p-1.5 md:p-2 bg-indigo-500/10 text-indigo-500 rounded-lg shrink-0">
+                <div className="p-1.5 md:p-2 bg-indigo-500/10 text-indigo-500 rounded-lg shrink-0 ml-2">
                   <ShoppingBag size={14} className="md:w-4 md:h-4" />
                 </div>
               </div>
 
               {/* Kartu Kanan: Keuntungan Bersih Jasa Service */}
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 md:p-4 rounded-xl flex justify-between items-start shadow-sm">
-                <div>
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2.5 md:p-4 rounded-xl flex justify-between items-start shadow-sm min-w-0">
+                <div className="min-w-0 flex-1">
                   <span className="text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider block">Jasa Service</span>
-                  <span className="text-xs md:text-base font-extrabold text-zinc-900 dark:text-white block mt-1">{formatRupiah(filteredServiceMargin)}</span>
-                  <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5">Jasa reparasi</span>
+                  <span className="text-xs md:text-base font-extrabold text-zinc-900 dark:text-white block mt-1 truncate select-all" title={formatRupiah(filteredServiceMargin)}>{formatRupiah(filteredServiceMargin)}</span>
+                  <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 block mt-0.5 truncate">Jasa reparasi</span>
                 </div>
-                <div className="p-1.5 md:p-2 bg-amber-500/10 text-amber-500 rounded-lg shrink-0">
+                <div className="p-1.5 md:p-2 bg-amber-500/10 text-amber-500 rounded-lg shrink-0 ml-2">
                   <Wrench size={14} className="md:w-4 md:h-4" />
                 </div>
               </div>

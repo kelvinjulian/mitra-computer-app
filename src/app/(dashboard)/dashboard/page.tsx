@@ -235,20 +235,20 @@ export default function DashboardPage() {
       )}
 
       {/* Grid Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+      <div className="grid grid-cols-1 min-[380px]:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
-            <div key={idx} className="bg-white dark:bg-zinc-900 p-2.5 md:p-6 rounded-2xl border border-slate-100 shadow-sm dark:border-zinc-800/80 hover:border-indigo-500/20 transition-all duration-300 hover:shadow-md flex flex-col justify-between group text-slate-900 dark:text-zinc-50">
+            <div key={idx} className="bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-100 shadow-sm dark:border-zinc-800/80 hover:border-indigo-500/20 transition-all duration-300 hover:shadow-md flex flex-col justify-between group text-slate-900 dark:text-zinc-50 min-w-0">
               <div className="flex items-start justify-between gap-1">
-                <span className="text-slate-400 dark:text-zinc-500 text-[9px] md:text-xs font-semibold uppercase tracking-wider">{t(stat.name)}</span>
+                <span className="text-slate-400 dark:text-zinc-500 text-[9px] md:text-xs font-semibold uppercase tracking-wider truncate">{t(stat.name)}</span>
                 <div className={`p-1.5 md:p-2.5 rounded-xl ${stat.color} transition-transform duration-300 group-hover:scale-110 shrink-0`}>
                   <Icon size={14} className="md:w-5 md:h-5" />
                 </div>
               </div>
-              <div className="mt-2 md:mt-4">
-                <h3 className="text-sm md:text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight">{stat.value}</h3>
-                <div className="flex items-center gap-1.5 mt-0.5 md:mt-2">
+              <div className="mt-2 md:mt-4 min-w-0">
+                <h3 className="text-xs min-[360px]:text-sm sm:text-base md:text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight truncate select-all" title={stat.value}>{stat.value}</h3>
+                <div className="flex items-center gap-1.5 mt-0.5 md:mt-2 min-w-0">
                   <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 font-medium line-clamp-1">{stat.description}</span>
                 </div>
               </div>

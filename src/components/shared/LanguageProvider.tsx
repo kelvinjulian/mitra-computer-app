@@ -125,6 +125,18 @@ const translations: Record<Language, Record<string, string>> = {
     'Catatan Pemasukan': 'Income Record',
     'Buku Kas Pengeluaran': 'Expense Record',
     'Tambah Pengeluaran': 'Add Expense',
+    'Today': 'Today',
+    'Last 7 days': 'Last 7 days',
+    'Last 30 days': 'Last 30 days',
+    'Month to date': 'Month to date',
+    'Year to date': 'Year to date',
+    'All time': 'All time',
+    'Select range': 'Select range',
+    'pick end date': 'pick end date',
+    'Quick select': 'Quick select',
+    'Cancel': 'Cancel',
+    'Apply': 'Apply',
+    'Range:': 'Range:',
   },
   id: {
     // Navigation
@@ -238,6 +250,18 @@ const translations: Record<Language, Record<string, string>> = {
     'Catatan Pemasukan': 'Catatan Pemasukan',
     'Buku Kas Pengeluaran': 'Buku Kas Pengeluaran',
     'Tambah Pengeluaran': 'Tambah Pengeluaran',
+    'Today': 'Hari ini',
+    'Last 7 days': '7 hari terakhir',
+    'Last 30 days': '30 hari terakhir',
+    'Month to date': 'Bulan ini',
+    'Year to date': 'Tahun ini',
+    'All time': 'Semua waktu',
+    'Select range': 'Pilih rentang',
+    'pick end date': 'pilih tanggal akhir',
+    'Quick select': 'Pilih cepat',
+    'Cancel': 'Batal',
+    'Apply': 'Terapkan',
+    'Range:': 'Rentang:',
   }
 };
 
