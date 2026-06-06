@@ -28,6 +28,7 @@ type Service = Database['public']['Tables']['services']['Row'];
 export default function DashboardPage() {
   const { t } = useLanguage();
   const { role } = useAuth();
+  const [revenueMode, setRevenueMode] = useState<'gross' | 'net'>('gross');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export default function DashboardPage() {
   const [recentServices, setRecentServices] = useState<Service[]>([]);
 
   const [todayRevenue, setTodayRevenue] = useState(0);
+  const [todayNetProfit, setTodayNetProfit] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
 
   // Date range state — default to today
@@ -112,12 +114,38 @@ export default function DashboardPage() {
 
       const { data: txs, error: txErr } = await supabase
         .from('transactions')
-        .select('total_amount')
+        .select('id, total_amount')
         .gte('created_at', rangeFrom)
         .lte('created_at', rangeTo);
       if (txErr) throw txErr;
 
       const posRevenue = (txs || []).reduce((sum, t) => sum + t.total_amount, 0);
+
+      // Fetch transaction items for cost calculations (margin kotor POS)
+      const txIds = (txs || []).map((t) => t.id);
+      let posMargin = 0;
+      if (txIds.length > 0) {
+        const { data: items, error: itemsErr } = await supabase
+          .from('transaction_items')
+          .select(`
+            quantity,
+            price_at_sale,
+            cost_price_at_sale,
+            products (
+              cost_price
+            )
+          `)
+          .in('transaction_id', txIds);
+        
+        if (!itemsErr && items) {
+          (items as any[]).forEach((item) => {
+            const cost = item.products?.cost_price ?? item.cost_price_at_sale ?? 0;
+            const sell = item.price_at_sale || 0;
+            const qty = item.quantity || 0;
+            posMargin += (sell - cost) * qty;
+          });
+        }
+      }
 
       // 3b. Fetch Services Selesai in date range
       const { data: svcToday, error: svcTodayErr } = await supabase
@@ -130,6 +158,12 @@ export default function DashboardPage() {
 
       const serviceRevenue = (svcToday || []).reduce(
         (sum, s) => sum + (s.service_cost || 0) + (s.part_cost || 0),
+        0
+      );
+
+      // Laba bersih service = total biaya jasa service (service_cost)
+      const serviceMargin = (svcToday || []).reduce(
+        (sum, s) => sum + (s.service_cost || 0),
         0
       );
 
@@ -152,6 +186,9 @@ export default function DashboardPage() {
 
       const expensesSum = (exps || []).reduce((sum, e) => sum + e.amount, 0);
       setMonthlyExpenses(expensesSum);
+
+      // Laba Bersih Bersih = POS Margin + Service Margin - Pengeluaran
+      setTodayNetProfit(posMargin + serviceMargin - expensesSum);
 
     } catch (err: any) {
       console.error('Error fetching dashboard data:', err.message);
@@ -182,7 +219,14 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { name: 'Omset Periode Ini', value: formatRupiah(todayRevenue), description: t('Gabungan Penjualan & Service Selesai'), icon: TrendingUp, color: 'text-indigo-600 bg-indigo-500/10' },
+    { 
+      name: revenueMode === 'gross' ? 'Pendapatan Harian' : 'Pendapatan Bersih', 
+      value: formatRupiah(revenueMode === 'gross' ? todayRevenue : todayNetProfit), 
+      description: revenueMode === 'gross' ? t('Gabungan Penjualan & Service Selesai') : t('Pendapatan dikurangi pengeluaran operasional'), 
+      icon: TrendingUp, 
+      color: 'text-indigo-600 bg-indigo-500/10',
+      isInteractive: true 
+    },
     { name: 'Antrean Service', value: `${activeServicesCount} Device`, description: t('Antrean & sedang dicek'), icon: Wrench, color: 'text-blue-600 bg-blue-500/10' },
     { name: 'Peringatan Stok', value: `${lowStockCount} Barang`, description: t('Segera restok dari Jambi'), icon: AlertCircle, color: 'text-amber-600 bg-amber-500/10' },
     { name: 'Pengeluaran Periode', value: formatRupiah(monthlyExpenses), description: t('Operasional ruko & toko'), icon: TrendingDown, color: 'text-rose-600 bg-rose-500/10' },
@@ -240,15 +284,29 @@ export default function DashboardPage() {
           const Icon = stat.icon;
           return (
             <div key={idx} className="bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-100 shadow-sm dark:border-zinc-800/80 hover:border-indigo-500/20 transition-all duration-300 hover:shadow-md flex flex-col justify-between group text-slate-900 dark:text-zinc-50 min-w-0">
-              <div className="flex items-start justify-between gap-1">
-                <span className="text-slate-400 dark:text-zinc-500 text-[9px] md:text-xs font-semibold uppercase tracking-wider truncate">{t(stat.name)}</span>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-slate-400 dark:text-zinc-500 text-[9px] md:text-xs font-semibold uppercase tracking-wider truncate mr-auto self-center">{t(stat.name)}</span>
                 <div className={`p-1.5 md:p-2.5 rounded-xl ${stat.color} transition-transform duration-300 group-hover:scale-110 shrink-0`}>
                   <Icon size={14} className="md:w-5 md:h-5" />
                 </div>
               </div>
               <div className="mt-2 md:mt-4 min-w-0">
                 <h3 className="text-xs min-[360px]:text-sm sm:text-base md:text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight truncate select-all" title={stat.value}>{stat.value}</h3>
-                <div className="flex items-center gap-1.5 mt-0.5 md:mt-2 min-w-0">
+                
+                {stat.isInteractive && (
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={revenueMode}
+                      onChange={(e) => setRevenueMode(e.target.value as 'gross' | 'net')}
+                      className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-lg px-2 py-1.5 text-[9px] font-bold text-slate-500 dark:text-zinc-400 outline-none cursor-pointer hover:border-indigo-500/40 transition-colors w-full sm:w-auto"
+                    >
+                      <option value="gross">{t('Pendapatan Harian')}</option>
+                      <option value="net">{t('Pendapatan Bersih')}</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 mt-2 min-w-0">
                   <span className="text-[9px] md:text-[10px] text-slate-400 dark:text-zinc-500 font-medium line-clamp-1">{stat.description}</span>
                 </div>
               </div>
