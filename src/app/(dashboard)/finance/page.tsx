@@ -523,14 +523,14 @@ export default function FinancePage() {
       )}
 
       {/* Page Header with Global Date Filter */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm">
+        <div className="flex flex-col max-w-xl">
           <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-zinc-50">Laporan &amp; Analisis Finansial</h2>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Kelola arus kas masuk, pengeluaran operasional ruko, dan pantau profit bersih.</p>
         </div>
         
         {/* Date Range Filter (Global) — uses shared DateRangePicker component */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="w-full sm:w-auto shrink-0 flex items-center gap-3 sm:justify-end">
           <DateRangePicker
             value={dateRange}
             onChange={(range) => setDateRange(range)}
