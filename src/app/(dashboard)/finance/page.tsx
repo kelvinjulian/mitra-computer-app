@@ -531,10 +531,12 @@ export default function FinancePage() {
         
         {/* Date Range Filter (Global) — uses shared DateRangePicker component */}
         <div className="w-full sm:w-auto shrink-0 flex items-center gap-3 sm:justify-end">
-          <DateRangePicker
-            value={dateRange}
-            onChange={(range) => setDateRange(range)}
-          />
+          <div className="relative w-full sm:w-auto flex justify-center sm:justify-start">
+            <DateRangePicker
+              value={dateRange}
+              onChange={(range) => setDateRange(range)}
+            />
+          </div>
           {(dateRange.from || dateRange.to) && (
             <button
               onClick={() => setDateRange({ from: null, to: null })}
