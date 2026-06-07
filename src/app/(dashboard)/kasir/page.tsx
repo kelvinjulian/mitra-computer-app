@@ -14,7 +14,8 @@ import {
   Tag,
   Loader2,
   AlertTriangle,
-  Printer
+  Printer,
+  FileText
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
@@ -288,45 +289,124 @@ export default function KasirPage() {
     }
   };
 
+  const handlePrintThermal = () => {
+    // 1. Remove any existing print style elements
+    document.getElementById('print-style-injector')?.remove();
+
+    // 2. Create new style element
+    const style = document.createElement('style');
+    style.id = 'print-style-injector';
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: 58mm auto !important;
+          margin: 0mm !important;
+        }
+        html, body, main {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #thermal-receipt,
+        #thermal-receipt * {
+          visibility: visible !important;
+        }
+        #thermal-receipt {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 58mm !important;
+          max-width: 58mm !important;
+          padding: 3mm !important;
+          box-sizing: border-box !important;
+          background: white !important;
+          color: black !important;
+          font-size: 11px !important;
+          line-height: 1.4 !important;
+          font-family: monospace !important;
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 3. Temporarily set page title to "CustomerName - InvoiceNumber" for browser PDF export filename
+    const originalTitle = document.title;
+    document.title = `${lastCustomerName} - ${invoiceNum}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+
+    // 4. Print
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
+  const handlePrintDigital = () => {
+    // 1. Remove any existing print style elements
+    document.getElementById('print-style-injector')?.remove();
+
+    // 2. Create new style element
+    const style = document.createElement('style');
+    style.id = 'print-style-injector';
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: A4 portrait !important;
+          margin: 15mm 15mm 15mm 15mm !important;
+        }
+        html, body, main {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #digital-invoice,
+        #digital-invoice * {
+          visibility: visible !important;
+        }
+        #digital-invoice {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          background: white !important;
+          color: black !important;
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 3. Temporarily set page title to "CustomerName - InvoiceNumber" for browser PDF export filename
+    const originalTitle = document.title;
+    document.title = `${lastCustomerName} - ${invoiceNum}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+
+    // 4. Print
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          /* 1. Force the page canvas to be exactly 58mm wide and height dynamic */
-          @page {
-            size: 58mm auto !important;
-            margin: 0mm !important;
-          }
-          
-          /* 2. Hide every single element in the DOM by default */
-          body * {
-            visibility: hidden !important;
-          }
-
-          /* 3. Unhide ONLY the receipt container and its direct children */
-          .receipt-container,
-          .receipt-container * {
-            visibility: visible !important;
-          }
-
-          /* 4. Lock the print root position to the absolute top-left corner */
-          .receipt-container {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 58mm !important;
-            max-width: 58mm !important;
-            padding: 3mm !important;
-            box-sizing: border-box !important;
-            background: white !important;
-            color: black !important;
-            font-size: 11px !important;
-            line-height: 1.4 !important;
-            font-family: monospace !important;
-            display: block !important;
-          }
-        }
-      `}} />
 
       <div className="flex flex-col xl:flex-row gap-8 h-[calc(100vh-12rem)] md:h-[calc(100vh-8.5rem)] print:hidden">
       {/* Products Selection Panel (Left column - main) */}
@@ -624,7 +704,7 @@ export default function KasirPage() {
 
       {/* Mobile Bottom Sheet Cart */}
       {showMobileCart && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center md:hidden no-print animate-fade-in">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center md:hidden print:hidden animate-fade-in">
           <div className="bg-white dark:bg-zinc-900 rounded-t-3xl w-full max-h-[85vh] flex flex-col p-6 overflow-hidden shadow-2xl text-slate-900 dark:text-zinc-50 transition-colors">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-4 mb-4">
               <div className="flex items-center gap-2">
@@ -788,7 +868,7 @@ export default function KasirPage() {
 
       {/* Checkout Success Modal overlay */}
       {checkoutSuccess && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 print:hidden">
           <div className="bg-white dark:bg-zinc-900 p-6 sm:p-8 rounded-2xl max-w-sm w-full text-center border border-slate-200 dark:border-zinc-800/80 shadow-2xl flex flex-col items-center">
             <div className="bg-indigo-100 dark:bg-indigo-950/40 p-3 rounded-full text-indigo-600 dark:text-indigo-400 mb-4 animate-bounce animate-duration-1000">
               <CheckCircle size={36} />
@@ -815,23 +895,35 @@ export default function KasirPage() {
             </div>
 
             {/* Print & Control Buttons */}
-            <div className="flex gap-3 w-full mt-2 mb-3">
+            <div className="flex flex-col gap-2.5 w-full mt-2 mb-3">
+              <div className="flex gap-2.5 w-full">
+                <button
+                  type="button"
+                  onClick={handlePrintThermal}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white min-h-[44px] rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 cursor-pointer"
+                >
+                  <Printer size={12} />
+                  Cetak Thermal
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrintDigital}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white min-h-[44px] rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10 cursor-pointer"
+                >
+                  <FileText size={12} />
+                  Cetak Invoice
+                </button>
+              </div>
               <button
-                onClick={() => window.print()}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/10 cursor-pointer"
-              >
-                <Printer size={14} />
-                Cetak Struk
-              </button>
-              <button
+                type="button"
                 onClick={() => setCheckoutSuccess(false)}
-                className="px-4 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 min-h-[44px] rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 min-h-[40px] rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 Tutup
               </button>
             </div>
             
-            <span className="text-[10px] text-slate-400 italic">Siap mencetak struk thermal...</span>
+            <span className="text-[10px] text-slate-400 italic">Dukung mode cetak Thermal (58mm) &amp; Digital (A4)...</span>
           </div>
         </div>
       )}
@@ -960,6 +1052,101 @@ export default function KasirPage() {
 
         <div className="text-center border-t border-dashed border-black pt-2 mt-2">
           Terima Kasih atas Kunjungan Anda!
+        </div>
+      </div>
+
+      {/* Digital Invoice Print Layout (E-Commerce Style) */}
+      <div id="digital-invoice" className="hidden print:block text-black bg-white p-8 font-sans w-full max-w-4xl mx-auto border border-gray-200 rounded-xl">
+        {/* Header / Logo */}
+        <div className="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-indigo-650">MITRA COMPUTER</h1>
+            <p className="text-xs text-gray-500 mt-1">
+              Jl. Kolonel Abunjani No. 24, Sipin<br/>
+              Ruko Simpang III, Jambi<br/>
+              Telp: 0811-7400-000
+            </p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-lg font-bold text-gray-800">INVOICE DIGITAL</h2>
+            <span className="inline-block mt-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold uppercase tracking-wider">
+              LUNAS (PAID)
+            </span>
+          </div>
+        </div>
+
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-6 border-b border-gray-200 pb-6 mb-6 text-sm">
+          {/* Metadata */}
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Rincian Invoice</span>
+            <div className="space-y-1">
+              <div><span className="text-gray-500 font-medium">No. Invoice:</span> <span className="font-semibold">{invoiceNum}</span></div>
+              <div><span className="text-gray-500 font-medium">Tanggal Transaksi:</span> <span className="font-semibold">{formatDateTime(lastTimestamp)}</span></div>
+              <div><span className="text-gray-500 font-medium">Metode Pembayaran:</span> <span className="font-semibold uppercase">{paymentMethod}</span></div>
+            </div>
+          </div>
+          
+          {/* Customer */}
+          <div className="text-right">
+            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Tujuan Pengiriman / Pembeli</span>
+            <div className="space-y-1">
+              <div className="font-bold text-gray-800">{lastCustomerName}</div>
+              <div className="text-xs text-gray-500">Pelanggan Umum Mitra Computer</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Itemized List Table */}
+        <div className="mb-6">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b-2 border-gray-300 font-bold bg-gray-50 text-gray-700">
+                <th className="py-3 text-left pl-3">Nama Produk / Barang</th>
+                <th className="py-3 text-right">Harga Satuan</th>
+                <th className="py-3 text-center">Kuantitas (Qty)</th>
+                <th className="py-3 text-right pr-3">Total Harga</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lastItems.map((item, idx) => (
+                <tr key={idx} className="border-b border-gray-200">
+                  <td className="py-3 pl-3 font-semibold text-gray-800">{item.name}</td>
+                  <td className="py-3 text-right text-gray-600">{formatRupiah(item.sellingPrice)}</td>
+                  <td className="py-3 text-center text-gray-600">{item.quantity}</td>
+                  <td className="py-3 text-right pr-3 font-bold text-gray-800">{formatRupiah(item.sellingPrice * item.quantity)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Summary Box */}
+        <div className="flex justify-end">
+          <div className="w-80 bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2.5 text-sm">
+            <div className="flex justify-between text-gray-600">
+              <span>Subtotal:</span>
+              <span className="font-semibold">{formatRupiah(lastTotal)}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Uang Diterima:</span>
+              <span className="font-semibold">{formatRupiah(lastCashReceived)}</span>
+            </div>
+            <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
+              <span>Uang Kembali:</span>
+              <span className="font-semibold">{formatRupiah(lastChangeDue)}</span>
+            </div>
+            <div className="flex justify-between font-extrabold text-base text-gray-900 pt-1">
+              <span>Total Tagihan:</span>
+              <span className="text-indigo-650">{formatRupiah(lastTotal)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-400 mt-12 border-t border-gray-100 pt-6">
+          Terima kasih telah berbelanja di Mitra Computer Jambi.<br/>
+          Simpan invoice digital ini sebagai bukti transaksi resmi Anda.
         </div>
       </div>
     </>
