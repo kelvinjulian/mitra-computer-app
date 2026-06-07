@@ -22,61 +22,70 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 1. Determine Date Range
-    let dateFrom = fromParam ? new Date(fromParam) : new Date();
-    let dateTo = toParam ? new Date(toParam) : new Date();
+    // 1. Determine Date Range in WIB (UTC+7) timezone
+    const nowWIB = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    const todayStr = `${nowWIB.getUTCFullYear()}-${String(nowWIB.getUTCMonth() + 1).padStart(2, '0')}-${String(nowWIB.getUTCDate()).padStart(2, '0')}`;
 
-    // If date range is a single day, expand to cover a useful chart view based on granularity
-    const diffTime = Math.abs(dateTo.getTime() - dateFrom.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 1) {
-      if (granularity === 'hari') {
-        // Last 7 days
-        dateFrom = new Date();
-        dateFrom.setDate(dateTo.getDate() - 6);
-      } else if (granularity === 'bulan') {
-        // Last 12 months
-        dateFrom = new Date();
-        dateFrom.setMonth(dateTo.getMonth() - 11);
-      } else {
-        // Last 5 years
-        dateFrom = new Date();
-        dateFrom.setFullYear(dateTo.getFullYear() - 4);
-      }
-    }
-
-    // Set boundary times
-    dateFrom.setHours(0, 0, 0, 0);
-    dateTo.setHours(23, 59, 59, 999);
-
-    const getLocalDateStr = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+    const getWIBDateStr = (date: Date) => {
+      const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+      const year = wibDate.getUTCFullYear();
+      const month = String(wibDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(wibDate.getUTCDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
 
-    const getLocalMonthStr = (date: Date) => {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const getWIBMonthStr = (date: Date) => {
+      const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+      const year = wibDate.getUTCFullYear();
+      const month = String(wibDate.getUTCMonth() + 1).padStart(2, '0');
+      return `${year}-${month}`;
     };
 
-    const getLocalDateStrFromISO = (isoStr: string) => {
-      return getLocalDateStr(new Date(isoStr));
+    const getWIBYearStr = (date: Date) => {
+      const wibDate = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+      return String(wibDate.getUTCFullYear());
     };
 
-    const getLocalMonthStrFromISO = (isoStr: string) => {
-      return getLocalMonthStr(new Date(isoStr));
+    const parseParamToWIBDateStr = (param: string | null, fallback: string) => {
+      if (!param) return fallback;
+      if (param.includes('T')) {
+        return getWIBDateStr(new Date(param));
+      }
+      return param;
     };
 
-    const getLocalYearStrFromISO = (isoStr: string) => {
-      return String(new Date(isoStr).getFullYear());
-    };
+    let fromDateStr = parseParamToWIBDateStr(fromParam, todayStr);
+    let toDateStr = parseParamToWIBDateStr(toParam, todayStr);
 
-    const fromISO = dateFrom.toISOString();
-    const toISO = dateTo.toISOString();
-    const fromDateStr = getLocalDateStr(dateFrom);
-    const toDateStr = getLocalDateStr(dateTo);
+    let dateFrom = new Date(`${fromDateStr}T00:00:00+07:00`);
+    let dateTo = new Date(`${toDateStr}T00:00:00+07:00`);
+
+    const diffTime = Math.abs(dateTo.getTime() - dateFrom.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      if (granularity === 'hari') {
+        // Last 7 days ending on selected date
+        dateFrom = new Date(dateTo);
+        dateFrom.setDate(dateTo.getDate() - 6);
+        fromDateStr = getWIBDateStr(dateFrom);
+      } else if (granularity === 'bulan') {
+        // Last 12 months ending on selected date
+        dateFrom = new Date(dateTo);
+        dateFrom.setMonth(dateTo.getMonth() - 11);
+        dateFrom.setDate(1);
+        fromDateStr = getWIBMonthStr(dateFrom) + '-01';
+      } else {
+        // Last 5 years ending on selected date
+        dateFrom = new Date(dateTo);
+        dateFrom.setFullYear(dateTo.getFullYear() - 4);
+        dateFrom.setMonth(0, 1);
+        fromDateStr = getWIBYearStr(dateFrom) + '-01-01';
+      }
+    }
+
+    const fromISO = new Date(`${fromDateStr}T00:00:00+07:00`).toISOString();
+    const toISO = new Date(`${toDateStr}T23:59:59.999+07:00`).toISOString();
 
     // 2. Fetch data from Supabase
     // A. Transactions
@@ -149,32 +158,35 @@ export async function GET(req: NextRequest) {
     const labels: string[] = [];
 
     if (granularity === 'hari') {
-      // Create buckets for each day using local time boundaries
-      const current = new Date(dateFrom);
-      while (current <= dateTo) {
-        const key = getLocalDateStr(current);
-        const label = current.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+      // Create buckets for each day using WIB time boundaries
+      const current = new Date(`${fromDateStr}T00:00:00+07:00`);
+      const endDate = new Date(`${toDateStr}T00:00:00+07:00`);
+      while (current <= endDate) {
+        const key = getWIBDateStr(current);
+        const label = new Date(current.getTime() + 7 * 60 * 60 * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', timeZone: 'UTC' });
         labels.push(label);
         buckets[key] = { netProfit: 0, expenses: 0, completedServices: 0, salesNetProfit: 0, serviceNetProfit: 0, totalInflow: 0, posGross: 0, serviceGross: 0 };
         current.setDate(current.getDate() + 1);
       }
     } else if (granularity === 'bulan') {
-      // Create buckets for each month using local time boundaries
-      const current = new Date(dateFrom);
+      // Create buckets for each month using WIB time boundaries
+      const current = new Date(`${fromDateStr}T00:00:00+07:00`);
       current.setDate(1); // Set to start of month to avoid overflow
-      while (current <= dateTo) {
-        const key = getLocalMonthStr(current);
-        const label = current.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+      const endDate = new Date(`${toDateStr}T00:00:00+07:00`);
+      while (current <= endDate) {
+        const key = getWIBMonthStr(current);
+        const label = new Date(current.getTime() + 7 * 60 * 60 * 1000).toLocaleDateString('id-ID', { month: 'short', year: '2-digit', timeZone: 'UTC' });
         labels.push(label);
         buckets[key] = { netProfit: 0, expenses: 0, completedServices: 0, salesNetProfit: 0, serviceNetProfit: 0, totalInflow: 0, posGross: 0, serviceGross: 0 };
         current.setMonth(current.getMonth() + 1);
       }
     } else {
-      // Create buckets for each year using local time boundaries
-      const current = new Date(dateFrom);
+      // Create buckets for each year using WIB time boundaries
+      const current = new Date(`${fromDateStr}T00:00:00+07:00`);
       current.setMonth(0, 1); // Set to start of year
-      while (current <= dateTo) {
-        const key = String(current.getFullYear());
+      const endDate = new Date(`${toDateStr}T00:00:00+07:00`);
+      while (current <= endDate) {
+        const key = getWIBYearStr(current);
         labels.push(key);
         buckets[key] = { netProfit: 0, expenses: 0, completedServices: 0, salesNetProfit: 0, serviceNetProfit: 0, totalInflow: 0, posGross: 0, serviceGross: 0 };
         current.setFullYear(current.getFullYear() + 1);
@@ -185,11 +197,11 @@ export async function GET(req: NextRequest) {
     (txs || []).forEach((t) => {
       let key = '';
       if (granularity === 'hari') {
-        key = getLocalDateStrFromISO(t.created_at);
+        key = getWIBDateStr(new Date(t.created_at));
       } else if (granularity === 'bulan') {
-        key = getLocalMonthStrFromISO(t.created_at);
+        key = getWIBMonthStr(new Date(t.created_at));
       } else {
-        key = getLocalYearStrFromISO(t.created_at);
+        key = getWIBYearStr(new Date(t.created_at));
       }
 
       if (buckets[key]) {
@@ -204,11 +216,11 @@ export async function GET(req: NextRequest) {
     (svcs || []).forEach((s) => {
       let key = '';
       if (granularity === 'hari') {
-        key = getLocalDateStrFromISO(s.updated_at);
+        key = getWIBDateStr(new Date(s.updated_at));
       } else if (granularity === 'bulan') {
-        key = getLocalMonthStrFromISO(s.updated_at);
+        key = getWIBMonthStr(new Date(s.updated_at));
       } else {
-        key = getLocalYearStrFromISO(s.updated_at);
+        key = getWIBYearStr(new Date(s.updated_at));
       }
 
       if (buckets[key]) {

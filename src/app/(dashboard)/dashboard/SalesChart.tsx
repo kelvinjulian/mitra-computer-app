@@ -17,6 +17,12 @@ type ChartView = 'total_inflow' | 'profit_vs_expense' | 'pos_sales' | 'service_f
 
 export default function SalesChart({ dateRange }: SalesChartProps) {
   const { t, language } = useLanguage();
+  const getLocalDateStr = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const { theme, resolvedTheme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
@@ -32,8 +38,8 @@ export default function SalesChart({ dateRange }: SalesChartProps) {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const fromStr = dateRange.from ? dateRange.from.toISOString() : '';
-        const toStr = dateRange.to ? dateRange.to.toISOString() : '';
+        const fromStr = dateRange.from ? getLocalDateStr(dateRange.from) : '';
+        const toStr = dateRange.to ? getLocalDateStr(dateRange.to) : '';
         
         const res = await fetch(`/api/analytics/sales?from=${fromStr}&to=${toStr}&granularity=${granularity}`);
         if (!res.ok) throw new Error('Failed to fetch analytics');

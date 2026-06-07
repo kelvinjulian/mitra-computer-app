@@ -88,6 +88,12 @@ export default function AuditLogsTimeline() {
         return 'bg-rose-500/10 text-rose-600 border-rose-500/20 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50';
       case 'LOGIN':
         return 'bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/50';
+      case 'CREATE_EXPENSE':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/45 dark:text-emerald-400 dark:border-emerald-800';
+      case 'UPDATE_EXPENSE':
+        return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/45 dark:text-amber-400 dark:border-amber-800';
+      case 'DELETE_EXPENSE':
+        return 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/45 dark:text-rose-400 dark:border-rose-800';
       default:
         return 'bg-slate-500/10 text-slate-655 border-slate-500/20 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700';
     }
@@ -236,9 +242,31 @@ export default function AuditLogsTimeline() {
                     {/* Expandable Details Panel */}
                     {isExpanded && (
                       <div className="bg-zinc-950 p-4 rounded-lg border border-zinc-800 overflow-x-auto text-[10px] font-mono text-indigo-300 max-h-60 shadow-inner">
-                        <pre className="whitespace-pre-wrap leading-relaxed">
-                          {JSON.stringify(log.details, null, 2)}
-                        </pre>
+                        {log.action === 'UPDATE_EXPENSE' && log.details && typeof log.details === 'object' && 'data_sebelumnya' in log.details ? (
+                          <div className="space-y-3 min-w-[480px]">
+                            <div className="text-amber-400 font-bold border-b border-zinc-800 pb-1.5 uppercase tracking-wider">Perubahan Catatan Pengeluaran (Expense Update Comparison)</div>
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="space-y-1.5 border-r border-zinc-800/80 pr-4">
+                                <div className="text-zinc-500 font-bold uppercase tracking-wide">Data Sebelumnya (Original)</div>
+                                <div><span className="text-zinc-500">Deskripsi:</span> <span className="text-rose-400/90 line-through">{(log.details as any).data_sebelumnya?.description || '-'}</span></div>
+                                <div><span className="text-zinc-500">Nominal:</span> <span className="text-rose-400/90 line-through">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format((log.details as any).data_sebelumnya?.amount || 0)}</span></div>
+                                <div><span className="text-zinc-500">Tanggal:</span> <span className="text-zinc-400">{(log.details as any).data_sebelumnya?.date || '-'}</span></div>
+                                <div className="text-[9px] text-zinc-600 mt-2"><span className="text-zinc-500">Dibuat:</span> {formatDateTime((log.details as any).data_sebelumnya?.tanggal_dibuat)}</div>
+                              </div>
+                              <div className="space-y-1.5 pl-2">
+                                <div className="text-emerald-450 font-bold uppercase tracking-wide text-emerald-400/90">Data Sesudah (Updated)</div>
+                                <div><span className="text-zinc-500">Deskripsi:</span> <span className="text-emerald-400">{(log.details as any).data_sesudah?.description || '-'}</span></div>
+                                <div><span className="text-zinc-500">Nominal:</span> <span className="text-emerald-400">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format((log.details as any).data_sesudah?.amount || 0)}</span></div>
+                                <div><span className="text-zinc-500">Tanggal:</span> <span className="text-zinc-400">{(log.details as any).data_sesudah?.date || '-'}</span></div>
+                                <div className="text-[9px] text-zinc-650 mt-2"><span className="text-zinc-500">Diedit:</span> {formatDateTime((log.details as any).data_sesudah?.tanggal_diedit)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <pre className="whitespace-pre-wrap leading-relaxed">
+                            {JSON.stringify(log.details, null, 2)}
+                          </pre>
+                        )}
                       </div>
                     )}
                   </div>

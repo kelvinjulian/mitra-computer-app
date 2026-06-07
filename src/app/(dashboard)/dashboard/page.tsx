@@ -27,6 +27,12 @@ type Service = Database['public']['Tables']['services']['Row'];
 
 export default function DashboardPage() {
   const { t } = useLanguage();
+  const getLocalDateStr = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const { role } = useAuth();
   const [revenueMode, setRevenueMode] = useState<'gross' | 'net'>('gross');
   const [loading, setLoading] = useState(true);
@@ -171,11 +177,11 @@ export default function DashboardPage() {
 
       // 4. Fetch Expenses in date range
       const fromDateStr = range.from
-        ? new Date(range.from).toISOString().split('T')[0]
+        ? getLocalDateStr(range.from)
         : '1970-01-01';
       const toDateStr = range.to
-        ? new Date(range.to).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
+        ? getLocalDateStr(range.to)
+        : getLocalDateStr(new Date());
 
       const { data: exps, error: expErr } = await supabase
         .from('expenses')
