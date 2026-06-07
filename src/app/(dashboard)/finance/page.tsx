@@ -18,7 +18,10 @@ import {
   Trash2,
   CheckCircle2,
   ShoppingBag,
-  Wrench
+  Wrench,
+  FileDown,
+  Printer,
+  FileText
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database.types';
@@ -597,9 +600,241 @@ export default function FinancePage() {
     return exp.description.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  const grossPosRevenue = dateFilteredIncomes
+    .filter((i) => i.type === 'pos')
+    .reduce((sum, i) => sum + i.amount, 0);
+  const grossServiceRevenue = dateFilteredIncomes
+    .filter((i) => i.type === 'service')
+    .reduce((sum, i) => sum + i.amount, 0);
+
   const totalIncome = dateFilteredIncomes.reduce((sum, item) => sum + item.amount, 0);
   const totalExpense = filteredExpensesForTotal.reduce((sum, item) => sum + item.amount, 0);
   const netProfit = filteredPosMargin + filteredServiceMargin - totalExpense;
+
+  const handleExportPDF = () => {
+    // Remove any existing print style elements
+    document.getElementById('print-style-injector')?.remove();
+
+    // Create style element
+    const style = document.createElement('style');
+    style.id = 'print-style-injector';
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: A4 portrait !important;
+          margin: 15mm !important;
+        }
+        html, body, main {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #print-financial-statement,
+        #print-financial-statement * {
+          visibility: visible !important;
+        }
+        #print-financial-statement {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          background: white !important;
+          color: black !important;
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Set page title temporarily for browser PDF export filename
+    const originalTitle = document.title;
+    document.title = `Laporan_Keuangan_Periodik_${dateFrom && dateTo ? `${dateFrom}_to_${dateTo}` : 'all_time'}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
+  const handleExportExcel = () => {
+    const csvRows = [];
+    const escapeCsv = (val: any) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    csvRows.push("MITRA COMPUTER - LAPORAN KEUANGAN PERIODIK");
+    csvRows.push(`Periode: ${dateFrom && dateTo ? `${dateFrom} s/d ${dateTo}` : 'Semua Sesi/Waktu'}`);
+    csvRows.push(`Tanggal Ekspor: ${new Date().toLocaleString('id-ID')}`);
+    csvRows.push("");
+    
+    csvRows.push("IKHTISAR FINANSIAL");
+    csvRows.push("Metrik,Nominal");
+    csvRows.push(`Omzet Penjualan POS,${grossPosRevenue}`);
+    csvRows.push(`Omzet Jasa Service,${grossServiceRevenue}`);
+    csvRows.push(`Total Pendapatan Kotor,${totalIncome}`);
+    csvRows.push(`Total Pengeluaran Operasional,-${totalExpense}`);
+    csvRows.push(`Keuntungan Bersih Operasional,${netProfit}`);
+    csvRows.push("");
+    
+    csvRows.push("LOG ALIRAN KAS MASUK (PEMASUKAN)");
+    csvRows.push("Tanggal,Sumber Transaksi,Pembeli,Omzet,Margin Bersih");
+    dateFilteredIncomes.forEach(inc => {
+      csvRows.push(`${escapeCsv(inc.date)},${escapeCsv(inc.source)},${escapeCsv(inc.customerName || 'Umum')},${inc.amount},${inc.netMargin}`);
+    });
+    csvRows.push("");
+    
+    csvRows.push("LOG BUKU KAS PENGELUARAN (PENGELUARAN)");
+    csvRows.push("Tanggal,Deskripsi Pengeluaran,Nominal");
+    filteredExpensesForTotal.forEach(exp => {
+      csvRows.push(`${escapeCsv(exp.date)},${escapeCsv(exp.description)},-${exp.amount}`);
+    });
+    
+    const csvString = csvRows.join("\r\n");
+    const blob = new Blob(["\uFEFF" + csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const filename = `Laporan_Keuangan_Mitra_Computer_${dateFrom && dateTo ? `${dateFrom}_to_${dateTo}` : 'all_time'}.csv`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrintThermal = () => {
+    if (!posDetail) return;
+
+    // 1. Remove any existing print style elements
+    document.getElementById('print-style-injector')?.remove();
+
+    // 2. Create new style element
+    const style = document.createElement('style');
+    style.id = 'print-style-injector';
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: 58mm auto !important;
+          margin: 0mm !important;
+        }
+        html, body, main {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #thermal-receipt,
+        #thermal-receipt * {
+          visibility: visible !important;
+        }
+        #thermal-receipt {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 58mm !important;
+          max-width: 58mm !important;
+          padding: 3mm !important;
+          box-sizing: border-box !important;
+          background: white !important;
+          color: black !important;
+          font-size: 11px !important;
+          line-height: 1.4 !important;
+          font-family: monospace !important;
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 3. Temporarily set page title to "CustomerName - InvoiceNumber" for browser PDF export filename
+    const originalTitle = document.title;
+    const customer = posDetail.customer_name || 'Umum';
+    document.title = `${customer} - ${posDetail.invoice_number}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+
+    // 4. Print
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
+  const handlePrintDigital = () => {
+    if (!posDetail) return;
+
+    // 1. Remove any existing print style elements
+    document.getElementById('print-style-injector')?.remove();
+
+    // 2. Create new style element
+    const style = document.createElement('style');
+    style.id = 'print-style-injector';
+    style.innerHTML = `
+      @media print {
+        @page {
+          size: A4 portrait !important;
+          margin: 15mm 15mm 15mm 15mm !important;
+        }
+        html, body, main {
+          height: auto !important;
+          overflow: visible !important;
+          position: static !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #digital-invoice,
+        #digital-invoice * {
+          visibility: visible !important;
+        }
+        #digital-invoice {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+          background: white !important;
+          color: black !important;
+          display: block !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // 3. Temporarily set page title to "CustomerName - InvoiceNumber" for browser PDF export filename
+    const originalTitle = document.title;
+    const customer = posDetail.customer_name || 'Umum';
+    document.title = `${customer} - ${posDetail.invoice_number}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+
+    // 4. Print
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
 
   const isFiltered = !!dateFrom || !!dateTo;
 
@@ -613,7 +848,8 @@ export default function FinancePage() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-fade-in">
+    <>
+      <div className="space-y-4 md:space-y-6 animate-fade-in print:hidden">
       {/* Database Error Alert */}
       {error && (
         <div className="p-4 mb-6 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-500 text-xs flex items-center gap-2">
@@ -623,14 +859,31 @@ export default function FinancePage() {
       )}
 
       {/* Page Header with Global Date Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 w-full bg-white dark:bg-zinc-900 p-3 md:p-6 rounded-2xl border border-slate-200 dark:border-zinc-800/80 shadow-sm no-print">
         <div className="flex flex-col max-w-xl">
           <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-zinc-50">Laporan &amp; Analisis Finansial</h2>
           <p className="text-xs text-slate-500 dark:text-zinc-400">Kelola arus kas masuk, pengeluaran operasional ruko, dan pantau profit bersih.</p>
         </div>
         
         {/* Date Range Filter (Global) — uses shared DateRangePicker component */}
-        <div className="w-full sm:w-auto shrink-0 flex items-center gap-3 sm:justify-end">
+        <div className="w-full sm:w-auto shrink-0 flex flex-wrap items-center gap-3 sm:justify-end">
+          <button
+            type="button"
+            onClick={handleExportPDF}
+            className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shadow-indigo-600/10 cursor-pointer"
+          >
+            <FileDown size={14} />
+            Export PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-600/10 cursor-pointer"
+          >
+            <FileSpreadsheet size={14} />
+            Export Excel
+          </button>
+          <div className="border-l border-slate-200 dark:border-zinc-800 h-6 mx-1 hidden sm:block"></div>
           <DateRangePicker
             value={dateRange}
             onChange={(range) => setDateRange(range)}
@@ -1173,35 +1426,308 @@ export default function FinancePage() {
                 <div className="text-center py-12 text-slate-450">Data detail tidak ditemukan atau terjadi kesalahan.</div>
               )}
 
-              {/* Action Buttons: Cancel and Delete */}
+              {/* Action Buttons: Print, Cancel and Delete */}
               {!loadingDetail && (
-                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center border-t border-slate-100 dark:border-zinc-800 pt-6 mt-6">
-                  {role !== 'manager' && role !== 'finance_staff' && role !== 'staff' && role !== 'viewer' && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center border-t border-slate-100 dark:border-zinc-800 pt-6 mt-6 w-full">
+                  <div>
+                    {role !== 'manager' && role !== 'finance_staff' && role !== 'staff' && role !== 'viewer' && (
+                      <button 
+                        type="button" 
+                        disabled={deletingTx}
+                        onClick={handleDeleteTransaction}
+                        className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-2"
+                      >
+                        <Trash2 size={14} />
+                        {deletingTx ? 'Menghapus...' : 'Hapus Transaksi'}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto justify-end items-center">
+                    {selectedIncome.type === 'pos' && posDetail && (
+                      <div className="flex gap-2.5 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={handlePrintThermal}
+                          className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10 cursor-pointer"
+                        >
+                          <Printer size={14} />
+                          Cetak Thermal
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handlePrintDigital}
+                          className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/10 cursor-pointer"
+                        >
+                          <FileText size={14} />
+                          Cetak Invoice
+                        </button>
+                      </div>
+                    )}
                     <button 
                       type="button" 
-                      disabled={deletingTx}
-                      onClick={handleDeleteTransaction}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-800/50 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/10 flex items-center justify-center gap-2"
+                      onClick={() => {
+                        setSelectedIncome(null);
+                        setPosDetail(null);
+                        setServiceDetail(null);
+                      }} 
+                      className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800/85 transition-colors text-center cursor-pointer"
                     >
-                      <Trash2 size={14} />
-                      {deletingTx ? 'Menghapus...' : 'Hapus Transaksi'}
+                      Tutup
                     </button>
-                  )}
-
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setSelectedIncome(null);
-                      setPosDetail(null);
-                      setServiceDetail(null);
-                    }} 
-                    className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:text-zinc-300 dark:hover:bg-zinc-800/85 transition-colors text-center"
-                  >
-                    Tutup
-                  </button>
+                  </div>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      </div>
+
+      {/* Periodic Financial Statement Printable Layout (A4 formatted) */}
+      <div id="print-financial-statement" className="hidden print:block font-serif text-black p-8 bg-white max-w-4xl mx-auto">
+        <div className="text-center border-b-2 border-black pb-4 mb-6">
+          <h1 className="text-2xl font-bold uppercase tracking-wide">Mitra Computer</h1>
+          <p className="text-xs italic mt-0.5">Jejak Transaksi &amp; Laporan Keuangan Ruko Jambi</p>
+          <p className="text-sm font-semibold mt-2">LAPORAN KEUANGAN PERIODIK</p>
+          <p className="text-xs mt-1">Periode: {dateFrom && dateTo ? `${dateFrom} s/d ${dateTo}` : 'Semua Sesi/Waktu'}</p>
+        </div>
+
+        <div className="space-y-6">
+          {/* Section 1: Ringkasan Pendapatan & Pengeluaran */}
+          <div>
+            <h2 className="text-sm font-bold border-b border-gray-400 pb-1 uppercase mb-3">1. Ikhtisar Finansial (Financial Summary)</h2>
+            <table className="w-full text-xs border-collapse">
+              <tbody>
+                <tr className="border-b border-gray-200">
+                  <td className="py-2 font-medium">Omzet Kotor Penjualan POS (POS Cashier Gross)</td>
+                  <td className="py-2 text-right">{formatRupiah(grossPosRevenue)}</td>
+                </tr>
+                <tr className="border-b border-gray-200">
+                  <td className="py-2 font-medium">Omzet Kotor Jasa Service (Service Jasa Gross)</td>
+                  <td className="py-2 text-right">{formatRupiah(grossServiceRevenue)}</td>
+                </tr>
+                <tr className="border-b-2 border-black font-semibold">
+                  <td className="py-2">Total Pendapatan Kotor (Total Gross Revenue)</td>
+                  <td className="py-2 text-right">{formatRupiah(totalIncome)}</td>
+                </tr>
+                <tr className="border-b border-gray-200 text-red-650">
+                  <td className="py-2 font-medium">Total Pengeluaran Operasional (Operating Expenses)</td>
+                  <td className="py-2 text-right">-{formatRupiah(totalExpense)}</td>
+                </tr>
+                <tr className="border-b-2 border-black font-bold text-sm bg-gray-50">
+                  <td className="py-3">KEUNTUNGAN BERSIH OPERASIONAL (Net Profit Margin)</td>
+                  <td className="py-3 text-right">{formatRupiah(netProfit)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Section 2: Rincian Pemasukan */}
+          <div>
+            <h2 className="text-sm font-bold border-b border-gray-400 pb-1 uppercase mb-3">2. Log Aliran Kas Masuk (Incomes Detail)</h2>
+            <table className="w-full text-[10px] border-collapse">
+              <thead>
+                <tr className="border-b border-gray-400 font-bold bg-gray-150 text-gray-700">
+                  <th className="py-1.5 text-left pl-2">Tanggal</th>
+                  <th className="py-1.5 text-left">Sumber Transaksi</th>
+                  <th className="py-1.5 text-left">Nama Pembeli</th>
+                  <th className="py-1.5 text-right">Omzet</th>
+                  <th className="py-1.5 text-right pr-2">Margin Bersih</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dateFilteredIncomes.map((inc) => (
+                  <tr key={inc.id} className="border-b border-gray-200">
+                    <td className="py-1.5 pl-2">{inc.date}</td>
+                    <td className="py-1.5 font-medium">{inc.source}</td>
+                    <td className="py-1.5">{inc.customerName || 'Umum'}</td>
+                    <td className="py-1.5 text-right">{formatRupiah(inc.amount)}</td>
+                    <td className="py-1.5 text-right pr-2 font-semibold">{formatRupiah(inc.netMargin)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Section 3: Rincian Pengeluaran */}
+          <div>
+            <h2 className="text-sm font-bold border-b border-gray-400 pb-1 uppercase mb-3">3. Log Buku Kas Pengeluaran (Expenses Detail)</h2>
+            <table className="w-full text-[10px] border-collapse">
+              <thead>
+                <tr className="border-b border-gray-400 font-bold bg-gray-150 text-gray-700">
+                  <th className="py-1.5 text-left pl-2">Tanggal</th>
+                  <th className="py-1.5 text-left">Deskripsi Pengeluaran</th>
+                  <th className="py-1.5 text-right pr-2">Nominal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpensesForTotal.map((exp) => (
+                  <tr key={exp.id} className="border-b border-gray-200">
+                    <td className="py-1.5 pl-2">{exp.date}</td>
+                    <td className="py-1.5 font-medium">{exp.description}</td>
+                    <td className="py-1.5 text-right pr-2 text-rose-650 font-semibold">-{formatRupiah(exp.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mt-12 pt-6 border-t border-gray-300 flex justify-between text-[10px] text-gray-500">
+          <div>Dicetak secara sistem oleh Staff Mitra Computer pada: {new Date().toLocaleString('id-ID')}</div>
+          <div className="font-semibold uppercase tracking-wider">Mitra Computer Jambi</div>
+        </div>
+      </div>
+
+      {/* Thermal Receipt Print Layout */}
+      {posDetail && (
+        <div id="thermal-receipt" className="hidden print:block receipt-container text-black bg-white p-2">
+          <div className="text-center font-bold uppercase">Mitra Computer</div>
+          <div className="text-center mb-2 border-b border-dashed border-black pb-1.5">
+            Jl. Kolonel Abunjani No. 24, Sipin<br/>
+            Ruko Simpang III, Jambi<br/>
+            Telp: 0811-7400-000
+          </div>
+          
+          <div className="mb-2 space-y-0.5 border-b border-dashed border-black pb-1.5">
+            <div>No. Invoice : {posDetail.invoice_number}</div>
+            <div>Tanggal     : {formatDateTime(posDetail.created_at)}</div>
+            <div>Pelanggan   : {posDetail.customer_name || 'Umum'}</div>
+          </div>
+
+          <div className="border-b border-dashed border-black pb-1.5">
+            {posDetail.items.map((item: any, idx: number) => {
+              const name = item.products?.name || 'Produk Custom / Non-Inventory';
+              return (
+                <div key={idx} className="mb-1">
+                  <div className="truncate max-w-[190px]">{name}</div>
+                  <div className="flex justify-between">
+                    <span>{item.quantity} x {formatRupiah(item.price_at_sale)}</span>
+                    <span>{formatRupiah(item.price_at_sale * item.quantity)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="space-y-0.5 mt-1.5 pb-2">
+            <div className="flex justify-between font-bold">
+              <span>TOTAL:</span>
+              <span>{formatRupiah(posDetail.total_amount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>BAYAR:</span>
+              <span>{formatRupiah(posDetail.total_amount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>KEMBALI:</span>
+              <span>{formatRupiah(0)}</span>
+            </div>
+          </div>
+
+          <div className="text-center border-t border-dashed border-black pt-2 mt-2">
+            Terima Kasih atas Kunjungan Anda!
+          </div>
+        </div>
+      )}
+
+      {/* Digital Invoice Print Layout (E-Commerce Style) */}
+      {posDetail && (
+        <div id="digital-invoice" className="hidden print:block text-black bg-white p-8 font-sans w-full max-w-4xl mx-auto border border-gray-200 rounded-xl">
+          {/* Header / Logo */}
+          <div className="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-indigo-650">MITRA COMPUTER</h1>
+              <p className="text-xs text-gray-500 mt-1">
+                Jl. Kolonel Abunjani No. 24, Sipin<br/>
+                Ruko Simpang III, Jambi<br/>
+                Telp: 0811-7400-000
+              </p>
+            </div>
+            <div className="text-right">
+              <h2 className="text-lg font-bold text-gray-800">INVOICE DIGITAL</h2>
+              <span className="inline-block mt-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-bold uppercase tracking-wider">
+                LUNAS (PAID)
+              </span>
+            </div>
+          </div>
+
+          {/* Info Grid */}
+          <div className="grid grid-cols-2 gap-6 border-b border-gray-200 pb-6 mb-6 text-sm">
+            {/* Metadata */}
+            <div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Rincian Invoice</span>
+              <div className="space-y-1">
+                <div><span className="text-gray-500 font-medium">No. Invoice:</span> <span className="font-semibold">{posDetail.invoice_number}</span></div>
+                <div><span className="text-gray-500 font-medium">Tanggal Transaksi:</span> <span className="font-semibold">{formatDateTime(posDetail.created_at)}</span></div>
+                <div><span className="text-gray-500 font-medium">Metode Pembayaran:</span> <span className="font-semibold uppercase">{posDetail.payment_method}</span></div>
+              </div>
+            </div>
+            
+            {/* Customer */}
+            <div className="text-right">
+              <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Tujuan Pengiriman / Pembeli</span>
+              <div className="space-y-1">
+                <div className="font-bold text-gray-800">{posDetail.customer_name || 'Umum'}</div>
+                <div className="text-xs text-gray-500">Pelanggan Umum Mitra Computer</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Itemized List Table */}
+          <div className="mb-6">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-300 font-bold bg-gray-50 text-gray-700">
+                  <th className="py-3 text-left pl-3">Nama Produk / Barang</th>
+                  <th className="py-3 text-right">Harga Satuan</th>
+                  <th className="py-3 text-center">Kuantitas (Qty)</th>
+                  <th className="py-3 text-right pr-3">Total Harga</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posDetail.items.map((item: any, idx: number) => {
+                  const name = item.products?.name || 'Produk Custom / Non-Inventory';
+                  return (
+                    <tr key={idx} className="border-b border-gray-200">
+                      <td className="py-3 pl-3 font-semibold text-gray-800">{name}</td>
+                      <td className="py-3 text-right text-gray-600">{formatRupiah(item.price_at_sale)}</td>
+                      <td className="py-3 text-center text-gray-600">{item.quantity}</td>
+                      <td className="py-3 text-right pr-3 font-bold text-gray-800">{formatRupiah(item.price_at_sale * item.quantity)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Summary Box */}
+          <div className="flex justify-end">
+            <div className="w-80 bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2.5 text-sm">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal:</span>
+                <span className="font-semibold">{formatRupiah(posDetail.total_amount)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Uang Diterima:</span>
+                <span className="font-semibold">{formatRupiah(posDetail.total_amount)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600 border-b border-gray-200 pb-2">
+                <span>Uang Kembali:</span>
+                <span className="font-semibold">{formatRupiah(0)}</span>
+              </div>
+              <div className="flex justify-between font-extrabold text-base text-gray-900 pt-1">
+                <span>Total Tagihan:</span>
+                <span className="text-indigo-650">{formatRupiah(posDetail.total_amount)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-xs text-gray-400 mt-12 border-t border-gray-100 pt-6">
+            Terima kasih telah berbelanja di Mitra Computer Jambi.<br/>
+            Simpan invoice digital ini sebagai bukti transaksi resmi Anda.
           </div>
         </div>
       )}
@@ -1217,6 +1743,6 @@ export default function FinancePage() {
           <span className="text-xs font-semibold">{toast.message}</span>
         </div>
       )}
-    </div>
+    </>
   );
 }
