@@ -38,6 +38,13 @@ interface MappedIncome {
 
 export default function FinancePage() {
   const { role } = useAuth();
+
+  const getLocalDateStr = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<MappedIncome[]>([]);
   const [loading, setLoading] = useState(true);
@@ -347,7 +354,7 @@ export default function FinancePage() {
         id: t.id,
         source: `Penjualan POS (${t.invoice_number})`,
         amount: t.total_amount,
-        date: new Date(t.created_at).toISOString().split('T')[0],
+        date: getLocalDateStr(new Date(t.created_at)),
         type: 'pos' as const,
         netMargin: txMarginMap[t.id] || 0,
         customerName: t.customer_name || 'Umum'
@@ -357,7 +364,7 @@ export default function FinancePage() {
         id: s.id,
         source: `Service - ${s.device_name} (${s.customer_name})`,
         amount: (s.service_cost || 0) + (s.part_cost || 0),
-        date: new Date(s.updated_at).toISOString().split('T')[0],
+        date: getLocalDateStr(new Date(s.updated_at)),
         type: 'service' as const,
         netMargin: s.service_cost || 0,  // margin bersih service = biaya jasa teknisi
         customerName: s.customer_name
@@ -425,15 +432,64 @@ export default function FinancePage() {
 
         if (updateErr) throw updateErr;
 
+        // Log audit trail for UPDATE_EXPENSE
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          await supabase.from('audit_logs').insert([{
+            user_id: user?.id || null,
+            email: user?.email || null,
+            action: 'UPDATE_EXPENSE',
+            details: {
+              target_id: editingExpense.id,
+              data_sebelumnya: {
+                description: editingExpense.description,
+                amount: editingExpense.amount,
+                date: editingExpense.date,
+                tanggal_dibuat: editingExpense.created_at
+              },
+              data_sesudah: {
+                description: description,
+                amount: amount,
+                date: date,
+                tanggal_diedit: new Date().toISOString()
+              }
+            }
+          }]);
+        } catch (logErr) {
+          console.error('Failed to write audit log:', logErr);
+        }
+
         showToast('Catatan pengeluaran berhasil diperbarui!');
         setEditingExpense(null);
       } else {
         // Insert flow
-        const { error: insertErr } = await supabase
+        const { data: newExp, error: insertErr } = await supabase
           .from('expenses')
-          .insert([{ description, amount, date }]);
+          .insert([{ description, amount, date }])
+          .select()
+          .single();
 
         if (insertErr) throw insertErr;
+
+        // Log audit trail for CREATE_EXPENSE
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          await supabase.from('audit_logs').insert([{
+            user_id: user?.id || null,
+            email: user?.email || null,
+            action: 'CREATE_EXPENSE',
+            details: {
+              target_id: newExp.id,
+              amount: newExp.amount,
+              context: newExp.description,
+              description: newExp.description,
+              date: newExp.date,
+              timestamp: new Date().toISOString()
+            }
+          }]);
+        } catch (logErr) {
+          console.error('Failed to write audit log:', logErr);
+        }
 
         showToast('Catatan pengeluaran berhasil disimpan!');
         setShowAddExpense(false);
@@ -458,12 +514,41 @@ export default function FinancePage() {
     }
 
     try {
+      // Fetch the old expense data first to log details
+      const { data: oldExp } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('id', expenseId)
+        .maybeSingle();
+
       const { error: deleteErr } = await supabase
         .from('expenses')
         .delete()
         .eq('id', expenseId);
 
       if (deleteErr) throw deleteErr;
+
+      if (oldExp) {
+        // Log audit trail for DELETE_EXPENSE
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          await supabase.from('audit_logs').insert([{
+            user_id: user?.id || null,
+            email: user?.email || null,
+            action: 'DELETE_EXPENSE',
+            details: {
+              target_id: expenseId,
+              amount: oldExp.amount,
+              context: oldExp.description,
+              description: oldExp.description,
+              date: oldExp.date,
+              timestamp: new Date().toISOString()
+            }
+          }]);
+        } catch (logErr) {
+          console.error('Failed to write audit log:', logErr);
+        }
+      }
 
       showToast('Catatan pengeluaran berhasil dihapus!');
       fetchIncomesAndExpenses();
@@ -474,8 +559,8 @@ export default function FinancePage() {
   };
 
   // Convert DateRange to date string for comparison
-  const dateFrom = dateRange.from ? dateRange.from.toISOString().split('T')[0] : '';
-  const dateTo = dateRange.to ? dateRange.to.toISOString().split('T')[0] : '';
+  const dateFrom = dateRange.from ? getLocalDateStr(dateRange.from) : '';
+  const dateTo = dateRange.to ? getLocalDateStr(dateRange.to) : '';
 
   // Date filter logic for incomes (general date range filter)
   const dateFilteredIncomes = incomes.filter((inc) => {
