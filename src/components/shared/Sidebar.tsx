@@ -33,7 +33,7 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   ];
 
   const filteredMenuItems = menuItems.filter((item) => {
-    if (role === 'staff' && item.href === '/owner/staff') {
+    if (role !== 'owner' && (item.href === '/owner/staff' || item.name === 'Kelola Staf' || item.name === 'Akun Karyawan')) {
       return false;
     }
     return true;

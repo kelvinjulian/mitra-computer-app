@@ -414,7 +414,7 @@ export default function FinancePage() {
 
   const handleSaveExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (role === 'staff' || role === 'viewer') {
+    if (role !== 'owner') {
       showToast('Akses ditolak: Anda tidak memiliki wewenang untuk mencatat pengeluaran.', 'error');
       return;
     }
@@ -508,7 +508,7 @@ export default function FinancePage() {
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
-    if (role === 'staff' || role === 'viewer') {
+    if (role !== 'owner') {
       showToast('Akses ditolak: Anda tidak memiliki wewenang untuk menghapus pengeluaran.', 'error');
       return;
     }
@@ -1097,7 +1097,7 @@ export default function FinancePage() {
                 <h3 className="font-bold text-slate-900 dark:text-zinc-50 text-sm sm:text-base">Buku Kas Pengeluaran</h3>
                 <p className="text-xs text-slate-500">Catat semua pengeluaran ruko & operasional Bangko</p>
               </div>
-              {role !== 'staff' && role !== 'viewer' && (
+              {role === 'owner' && (
                 <button
                   onClick={() => setShowAddExpense(true)}
                   className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1"
@@ -1136,7 +1136,7 @@ export default function FinancePage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-extrabold text-rose-600">-{formatRupiah(exp.amount)}</span>
-                      {role !== 'staff' && role !== 'viewer' && (
+                      {role === 'owner' && (
                         <div className="flex items-center gap-1.5 border-l border-slate-100 dark:border-zinc-800 pl-3">
                           <button
                             onClick={() => setEditingExpense(exp)}
