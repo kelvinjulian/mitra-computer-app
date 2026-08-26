@@ -21,6 +21,7 @@ const translations: Record<Language, Record<string, string>> = {
     'Pelacakan Service': 'Service Tracking',
     'Arus Kas / Finansial': 'Finance',
     'Kelola Staf': 'Staff Management',
+    'Log Audit Aktivitas Karyawan': 'Employee Audit Logs',
     'Inventory': 'Inventory',
     'Service': 'Service Tracking',
     'Finance/Arus Kas': 'Finance',
